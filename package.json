@@ -1,0 +1,32 @@
+{
+  "name": "dddice-browser-extension",
+  "version": "0.1.0",
+  "description": "Roll 3D digital dice using your favorite browser-based VTT.",
+  "repository": "git@github.com:dddice/dddice-browser-extension.git",
+  "author": "dddice <developers@dddice.com>",
+  "scripts": {
+    "build": "parcel build src/manifest.json --config @parcel/config-webextension",
+    "lint": "eslint .",
+    "start": "parcel watch src/manifest.json --host localhost --config @parcel/config-webextension"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^13.2.1",
+    "@commitlint/config-conventional": "^13.2.0",
+    "@parcel/config-webextension": "^2.7.0",
+    "husky": "^7.0.4",
+    "lint-staged": "^12.1.1",
+    "parcel": "^2.7.0",
+    "prettier": "^2.4.1"
+  },
+  "keywords": [
+    "dddice",
+    "dice",
+    "browser"
+  ],
+  "license": "ISC",
+  "lint-staged": {
+    "{**/*,*}.{css,ts,tsx,json,html}": [
+      "prettier --write"
+    ]
+  }
+}
