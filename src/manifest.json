@@ -13,14 +13,14 @@
   },
   "content_scripts": [
     {
-      "js": ["background.ts"],
+      "js": ["dndbeyond.ts"],
       "matches": ["*://*.dndbeyond.com/*characters/*"]
     }
   ],
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": ["canvas.html", "background.ts"],
+      "resources": ["canvas.html"],
       "matches": ["https://www.dndbeyond.com/*"]
     }
   ]

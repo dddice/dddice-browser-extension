@@ -7,6 +7,12 @@ import axios from "axios";
 // const API_URI = "https://dddice.com/api/1.0";
 const API_URI = "http://localhost:8000/api/1.0";
 
+export const DefaultStorage: IStorage = {
+  apiKey: undefined,
+  room: undefined,
+  theme: undefined,
+};
+
 export interface IRoom {
   slug: string;
   name: string;

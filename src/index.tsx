@@ -6,17 +6,11 @@ import './index.css';
 import imageLogo from 'url:./assets/dddice-48x48.png'
 import Loading from './assets/loading.svg'
 
-import API, { IUser, IStorage } from './api';
-import useLocalStorage from './useLocalStorage'
+import API, { IUser, IStorage, DefaultStorage } from './api';
+import { getStorage, setStorage } from "./storage";
 import Splash from './components/Splash'
 import Rooms from './components/Rooms'
 import Themes from './components/Themes'
-
-const DefaultStorage: IStorage = {
-  apiKey: undefined,
-  room: undefined,
-  theme: undefined,
-}
 
 const App = () => {
   /**
@@ -25,9 +19,9 @@ const App = () => {
   const api = useRef();
 
   /**
-   * Local Storage
+   * Storage Object
    */
-  const [storage, setStorage] = useLocalStorage('dddice', DefaultStorage);
+  const [state, setState] = useState(DefaultStorage)
 
   /**
    * Loading
@@ -48,13 +42,13 @@ const App = () => {
    * Rooms
    */
   const [rooms, setRooms] = useState([])
-  const currentRoomRef = useRef(storage.room); // for instant access to rooms
+  const currentRoom = useRef(state.room); // for instant access to rooms
 
   /**
    * Themes
    */
   const [themes, setThemes] = useState([])
-  const currentThemeRef = useRef(storage.theme); // for instant access to themes
+  const currentTheme = useRef(state.theme); // for instant access to themes
 
   /**
    * Connect to VTT
@@ -72,12 +66,33 @@ const App = () => {
     connect()
   }, [])
 
-  /**
-   * Fetch information from API once we have an API key
-   */
   useEffect(() => {
-    if (storage.apiKey) {
-      api.current = new API(storage.apiKey);
+    async function initStorage() {
+      const [apiKey, room, theme] = await Promise.all([
+        getStorage("apiKey"),
+        getStorage("room"),
+        getStorage("theme"),
+      ]);
+
+      currentRoom.current = room
+      currentTheme.current = theme
+
+      setState((storage: IStorage) => ({
+        ...storage,
+        apiKey,
+        room,
+        theme,
+      }))
+    }
+
+    if (isConnected) {
+      initStorage()
+    }
+  }, [isConnected])
+
+  useEffect(() => {
+    if (state.apiKey) {
+      api.current = new API(state.apiKey);
 
       const load = async () => {
         setIsLoading(true)
@@ -89,53 +104,34 @@ const App = () => {
         setThemes(themes)
         setRooms(rooms)
         setIsLoading(false)
-
-        chrome.runtime.onMessage.addListener(onMessage)
       }
 
       load()
     }
-  }, [storage.apiKey])
-
-  /**
-   * Call the dddice API
-   */
-  const onMessage = useCallback((request, sender, senderResponse) => {
-    const {type, modifier} = request
-
-    const room = currentRoomRef.current
-    const dice = [{
-      type,
-      theme: currentThemeRef.current,
-    }]
-
-    console.log(type, modifier, room, dice)
-    api.current.roll().create(dice, room)
-  }, [])
+  }, [state.apiKey])
 
   const onKeySuccess = useCallback((apiKey: string) => {
-    setStorage((storage: IStorage) => ({
+    setState((storage: IStorage) => ({
       ...storage,
       apiKey,
     }))
+    setStorage({ apiKey })
   }, [])
 
   const onChangeRoom = useCallback((room: string) => {
-    setStorage((storage: IStorage) => ({
+    setState((storage: IStorage) => ({
       ...storage,
       room,
     }))
-
-    currentRoomRef.current = room
+    setStorage({ room })
   }, [])
 
   const onChangeTheme = useCallback((theme: string) => {
-    setStorage((storage: IStorage) => ({
+    setState((storage: IStorage) => ({
       ...storage,
       theme,
     }))
-
-    currentThemeRef.current = theme
+    setStorage({ theme })
   }, [])
 
   /**
@@ -154,12 +150,12 @@ const App = () => {
           </div>
         ) : (
           <>
-            {!storage.apiKey ? (
+            {!state.apiKey ? (
               <Splash onSuccess={onKeySuccess} />
             ) : (
               <>
-                <Rooms selected={storage.room} onChange={onChangeRoom} rooms={rooms} />
-                <Themes selected={storage.theme} onChange={onChangeTheme} themes={themes} />
+                <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
+                <Themes selected={state.theme} onChange={onChangeTheme} themes={themes} />
               </>
             )}
           </>

@@ -1,3 +1,6 @@
+import API from "./api";
+import { getStorage } from "./storage";
+
 const RETRY_TIMEOUT = 100;
 
 /**
@@ -23,10 +26,25 @@ function init() {
  * Send roll event to dddice extension which will send to API
  */
 function onPointerDown() {
-  chrome.runtime.sendMessage({
-    type: "d20",
-    modifier: (this as HTMLDivElement).textContent,
-  });
+  rollCreate("d20", (this as HTMLDivElement).textContent);
+}
+
+async function rollCreate(type: string, modifier: string) {
+  const [apiKey, room, theme] = await Promise.all([
+    getStorage("apiKey"),
+    getStorage("room"),
+    getStorage("theme"),
+  ]);
+
+  const dice = [
+    {
+      type,
+      theme,
+    },
+  ];
+
+  console.log(apiKey, room, theme, dice);
+  new API(apiKey).roll().create(dice, room);
 }
 
 /**
