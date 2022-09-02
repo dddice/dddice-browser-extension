@@ -1,0 +1,3 @@
+.integrated-dice__container * {
+     pointer-events: none;
+}

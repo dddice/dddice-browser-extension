@@ -3,7 +3,7 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 
 const config = {
-  content: ["./src/**/*.{html,ts,tsx}"],
+  content: ["./src/**/*.{html,ts,tsx}", "./src/*.{html,ts,tsx}"],
   theme: {
     extend: {
       animation: {

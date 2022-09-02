@@ -49,12 +49,17 @@ class API {
   });
 
   public roll = () => ({
-    create: async (dice: { type: string; theme: string }[], room: string) =>
-      (await axios.post(`${API_URI}/roll`, { dice, room })).data.data,
+    create: async (params: {
+      dice: { type: string; theme: string }[];
+      room: string;
+      operator: object;
+    }) => (await axios.post(`${API_URI}/roll`, params)).data.data,
   });
 
   public room = () => ({
     list: async () => (await axios.get(`${API_URI}/room`)).data.data,
+    updateRolls: async (slug: string, dice: { is_cleared: boolean }) =>
+      (await axios.patch(`${API_URI}/room/${slug}/roll`, { dice })).data.data,
   });
 
   public diceBox = () => ({
