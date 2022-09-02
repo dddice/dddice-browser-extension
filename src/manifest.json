@@ -20,7 +20,7 @@
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": ["canvas.html"],
+      "resources": ["canvas.html", "dndbeyond.css"],
       "matches": ["https://www.dndbeyond.com/*"]
     }
   ]

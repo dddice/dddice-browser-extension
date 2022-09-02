@@ -8,8 +8,9 @@ const RETRY_TIMEOUT = 100;
  */
 function init() {
   const attackElements = document.querySelectorAll(
-    ".ddbc-combat-attack__action"
+    ".integrated-dice__container"
   );
+
   if (attackElements.length === 0) return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
   attackElements.forEach((element) => {
@@ -25,44 +26,53 @@ function init() {
  * Pointer Down
  * Send roll event to dddice extension which will send to API
  */
-function onPointerDown() {
-  rollCreate("d20", (this as HTMLDivElement).textContent);
+function onPointerDown(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const text = (this as HTMLDivElement).textContent;
+  let modifier: number;
+  let dieCount = 1;
+  let dieType = "d20";
+
+  if (/^\+\d/.test(text)) {
+    modifier = Number(text.replace("+", ""));
+  } else if (/^\-\d/.test(text)) {
+    modifier = -1 * Number(text.replace("-", ""));
+  } else if (/\d*d\d*/.test(text)) {
+    const [count, type] = text.split("d");
+    dieCount = Number(count);
+    dieType = `d${type}`;
+  }
+
+  rollCreate(dieCount, dieType, modifier);
 }
 
-async function rollCreate(type: string, modifier: string) {
+async function rollCreate(count: number, type: string, modifier: number) {
   const [apiKey, room, theme] = await Promise.all([
     getStorage("apiKey"),
     getStorage("room"),
     getStorage("theme"),
   ]);
 
-  const dice = [
-    {
+  const dice = [];
+  for (let i = 0; i < count; i++) {
+    dice.push({
       type,
       theme,
-    },
-  ];
+    });
+  }
 
-  console.log(apiKey, room, theme, dice);
+  if (modifier) {
+    dice.push({
+      type: "mod",
+      theme,
+      value: modifier,
+    });
+  }
+
   new API(apiKey).roll().create(dice, room);
 }
 
-/**
- * Remove the canvas from D&DBeyond to prevent 3D dice from appearing
- */
-// function removeCanvas() {
-//   const canvas = document.getElementById("dice-rolling-canvas");
-//   if (!canvas) return setTimeout(removeCanvas, RETRY_TIMEOUT); // retry if missing
-//
-//   const engine = canvas.dataset.engine;
-//   if (!engine) return setTimeout(removeCanvas, RETRY_TIMEOUT); // retry if not initialized
-//
-//   canvas.parentNode.removeChild(canvas);
-// }
-
-/**
- * On page load, remove the canvas right away
- */
-window.addEventListener("load", () => {
-  init();
-});
+window.addEventListener("load", () => init());
+window.addEventListener("resize", () => init());
