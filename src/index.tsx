@@ -6,7 +6,7 @@ import './index.css';
 import imageLogo from 'url:./assets/dddice-48x48.png'
 import Loading from './assets/loading.svg'
 
-import API, { IUser, IStorage, DefaultStorage } from './api';
+import API, { IStorage, DefaultStorage } from './api';
 import { getStorage, setStorage } from "./storage";
 import Splash from './components/Splash'
 import Rooms from './components/Rooms'

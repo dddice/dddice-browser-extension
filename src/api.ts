@@ -63,7 +63,10 @@ class API {
   });
 
   public diceBox = () => ({
-    list: async () => (await axios.get(`${API_URI}/dice-box`)).data.data,
+    list: async (filter?: string) => {
+      const query = filter ? `?filter=${filter}` : "";
+      return (await axios.get(`${API_URI}/dice-box${query}`)).data.data;
+    },
   });
 }
 
