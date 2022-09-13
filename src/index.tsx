@@ -34,6 +34,11 @@ const App = () => {
   const [isConnected, setIsConnected] = useState(false)
 
   /**
+   * Error
+   */
+  const [error, setError] = useState()
+
+  /**
    * Current VTT
    */
   const [vtt, setVTT] = useState(undefined)
@@ -96,12 +101,18 @@ const App = () => {
 
       const load = async () => {
         setIsLoading(true)
-        const [rooms, themes] = await Promise.all([
+
+        try {
+          await api.current.user().get()
+        } catch (error) {
+          setError('Problem connecting with dddice')
+          return;
+        }
+
+        const [rooms] = await Promise.all([
           api.current.room().list(),
-          api.current.diceBox().list()
         ])
 
-        setThemes(themes)
         setRooms(rooms)
         setIsLoading(false)
       }
@@ -109,6 +120,19 @@ const App = () => {
       load()
     }
   }, [state.apiKey])
+
+  const onSearch = useCallback((value: string) => {
+    async function search() {
+      if (value) {
+        const themes = await api.current.diceBox().list(value);
+        setThemes(themes)
+      } else {
+        setThemes([])
+      }
+    }
+
+    search()
+  }, [])
 
   const onKeySuccess = useCallback((apiKey: string) => {
     setState((storage: IStorage) => ({
@@ -134,6 +158,16 @@ const App = () => {
     setStorage({ theme })
   }, [])
 
+  const onSignOut = useCallback(() => {
+    setState((storage: IStorage) => ({
+      ...storage,
+      apiKey: undefined,
+    }))
+    setStorage({ apiKey: undefined })
+    setError(undefined)
+    setIsLoading(false)
+  }, [])
+
   /**
    * Render
    */
@@ -144,30 +178,49 @@ const App = () => {
             <span className="text-white text-lg">dddice</span>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center text-gray-700 mt-4">
-            <Loading className="h-10 w-10 animate-spin-slow" />
+        {error && (
+          <div className="text-gray-700 mt-4">
+              <p className="text-center text-neon-red">{error}</p>
+              <p className="text-center text-gray-200 mt-1">
+                <button className="text-neon-blue" onClick={onSignOut}>Click here</button> to sign out and try again.
+              </p>
           </div>
-        ) : (
+        )}
+
+        {isConnected && !error && (
           <>
-            {!state.apiKey ? (
-              <Splash onSuccess={onKeySuccess} />
+            {isLoading ? (
+              <div className="flex justify-center text-gray-700 mt-4">
+                <Loading className="h-10 w-10 animate-spin-slow" />
+              </div>
             ) : (
               <>
-                <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
-                <Themes selected={state.theme} onChange={onChangeTheme} themes={themes} />
+                {!state.apiKey ? (
+                  <Splash onSuccess={onKeySuccess} />
+                ) : (
+                  <>
+                    <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
+                    <Themes selected={state.theme} onChange={onChangeTheme} onSearch={onSearch} themes={themes} />
+                  </>
+                )}
               </>
             )}
           </>
         )}
+        {!isConnected && (
+          <div className="flex justify-center text-gray-700 mt-4">
+              <span className="text-center text-gray-300">Not connected. Please navigate to a supported VTT.</span>
+          </div>
+        )}
 
         <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
-          {isConnected ? (
-            <span className="text-gray-300">Connected to {vtt}</span>
-          ) : (
-            <span className="text-neon-red">Not connected</span>
+          {isConnected && (
+            <>
+              <span className="text-gray-300">Connected to {vtt}</span>
+              <span className="text-gray-700">{' | '}</span>
+            </>
           )}
-          {' '} | dddice v0.0.1
+          dddice v0.0.1
         </p>
     </div>
   );

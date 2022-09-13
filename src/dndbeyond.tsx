@@ -6,6 +6,7 @@ import "./dndbeyond.css";
 import imageLogo from 'url:./assets/dddice-32x32.png'
 
 const RETRY_TIMEOUT = 100;
+const FADE_TIMEOUT = 100;
 
 /**
  * Initialize listeners on all attacks
@@ -41,18 +42,18 @@ function onPointerOver(e) {
     const buttonRoll = document.createElement('button')
     buttonRoll.addEventListener('pointerup', onPointerUp())
     buttonRoll.appendChild(img)
-    buttonRoll.className = "h-10 w-10 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-100"
+    buttonRoll.className = "h-8 w-8 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-80"
     buttonRoll.dataset.text = text
 
     const buttonAdv = document.createElement('button')
     buttonAdv.addEventListener('pointerup', onPointerUp({ k: 'h1' }))
-    buttonAdv.className = "flex-1 h-10 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-100 text-gray-100 font-bold"
+    buttonAdv.className = "flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold"
     buttonAdv.textContent = 'adv'
     buttonAdv.dataset.text = text
 
     const buttonDis = document.createElement('button')
     buttonDis.addEventListener('pointerup', onPointerUp({ k: 'l1' }))
-    buttonDis.className = "flex-1 h-10 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-100 text-gray-100 font-bold"
+    buttonDis.className = "flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold"
     buttonDis.textContent = 'dis'
     buttonDis.dataset.text = text
 
@@ -77,10 +78,10 @@ function onPointerOut(e) {
     if (overlayElement.querySelector(':hover') === null) {
       overlayElement.style.display = 'none'
     } else {
-      this.timeout = setTimeout(closeOverlay, 250)
+      this.timeout = setTimeout(closeOverlay, FADE_TIMEOUT)
     }
   }
-  this.timeout = setTimeout(closeOverlay, 250)
+  this.timeout = setTimeout(closeOverlay, FADE_TIMEOUT)
 }
 
 /**
@@ -99,14 +100,18 @@ function onPointerUp(operator = {}) {
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
     let dieType = "d20";
 
-    if (/^\+\d/.test(text)) {
-      modifier = Number(text.replace("+", ""));
-    } else if (/^\-\d/.test(text)) {
-      modifier = -1 * Number(text.replace("-", ""));
-    } else if (/\d*d\d*/.test(text)) {
+    if (/\d*d\d*/.test(text)) {
       const [count, type] = text.split("d");
       dieCount = Number(count);
-      dieType = `d${type}`;
+      dieType = `d${type.replace(/[\+\-].*/, '')}`;
+    }
+
+    if (/\+\d*/.test(text)) {
+      const [num] = /\+(\d*)/.exec(text)
+      modifier = Number(num);
+    } else if (/\-\d*/.test(text)) {
+      const [num] = /\-(\d*)/.exec(text)
+      modifier = Number(num);
     }
 
     rollCreate(dieCount, dieType, modifier, operator);
