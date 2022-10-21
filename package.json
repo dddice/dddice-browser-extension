@@ -10,18 +10,26 @@
     "start": "parcel watch src/manifest.json --host localhost",
     "start:firefox": "web-ext run --source-dir ./src"
   },
+  "dependencies": {
+    "dddice-js": "^0.6.3",
+    "dotenv": "^16.0.3"
+  },
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
     "@commitlint/config-conventional": "^13.2.0",
     "@parcel/config-webextension": "^2.7.0",
     "@parcel/transformer-svg-react": "^2.7.0",
     "@parcel/validator-typescript": "^2.7.0",
+    "@typescript-eslint/eslint-plugin": "^5.40.1",
     "axios": "^0.27.2",
     "buffer": "^6.0.3",
     "classnames": "^2.3.1",
+    "eslint-config-prettier": "^8.5.0",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.1",
+    "os-browserify": "^0.3.0",
     "parcel": "^2.7.0",
+    "path-browserify": "^1.0.1",
     "prettier": "^2.4.1",
     "process": "^0.11.10",
     "react": "^18.2.0",

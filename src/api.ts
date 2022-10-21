@@ -3,9 +3,10 @@
  */
 
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 
-const API_URI = "https://dddice.com/api/1.0";
-// const API_URI = "http://localhost:8000/api/1.0";
+const API_URI = process.env.API_URI;
 
 export const DefaultStorage: IStorage = {
   apiKey: undefined,
