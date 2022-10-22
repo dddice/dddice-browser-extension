@@ -44,7 +44,11 @@
   ],
   "license": "ISC",
   "lint-staged": {
-    "{**/*,*}.{css,ts,tsx,json,html}": [
+    "{**/*,*}.{css,json,html}": [
+      "prettier --write"
+    ],
+    "*.ts*": [
+      "eslint --fix",
       "prettier --write"
     ]
   }
