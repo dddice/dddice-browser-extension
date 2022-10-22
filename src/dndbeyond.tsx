@@ -39,21 +39,27 @@ function onPointerOver() {
     img.className = "h-auto w-auto";
 
     const buttonRoll = document.createElement("button");
-    buttonRoll.addEventListener("pointerup", onPointerUp());
+    buttonRoll.addEventListener("pointerup", onPointerUp(overlayId));
     buttonRoll.appendChild(img);
     buttonRoll.className =
       "h-8 w-8 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-80";
     buttonRoll.dataset.text = text;
 
     const buttonAdv = document.createElement("button");
-    buttonAdv.addEventListener("pointerup", onPointerUp({ k: "h1" }));
+    buttonAdv.addEventListener(
+      "pointerup",
+      onPointerUp(overlayId, { k: "h1" })
+    );
     buttonAdv.className =
       "flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold";
     buttonAdv.textContent = "adv";
     buttonAdv.dataset.text = text;
 
     const buttonDis = document.createElement("button");
-    buttonDis.addEventListener("pointerup", onPointerUp({ k: "l1" }));
+    buttonDis.addEventListener(
+      "pointerup",
+      onPointerUp(overlayId, { k: "l1" })
+    );
     buttonDis.className =
       "flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold";
     buttonDis.textContent = "dis";
@@ -93,7 +99,7 @@ function onPointerOut() {
  * Pointer Up
  * Send roll event to dddice extension which will send to API
  */
-function onPointerUp(operator = {}) {
+function onPointerUp(overlayId, operator = {}) {
   return function (e) {
     if (e.button === 2) return;
 
@@ -118,6 +124,10 @@ function onPointerUp(operator = {}) {
       const [num] = /-(\d*)/.exec(text);
       modifier = Number(num);
     }
+
+    // close the overlay
+    const overlayElement = document.getElementById(overlayId);
+    overlayElement.style.display = "none";
 
     rollCreate(dieCount, dieType, modifier, operator);
   };
