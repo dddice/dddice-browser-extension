@@ -1,11 +1,13 @@
 /**
  * Submit API Key
+ *
+ * @format
  */
 
-import React, { useCallback, useState } from "react";
-import classNames from "classnames";
+import React, { useCallback, useState } from 'react';
+import classNames from 'classnames';
 
-import API, { IUser } from "../api";
+import API, { IUser } from '../api';
 
 interface ISplash {
   onSuccess(apiKey: string, user: IUser): any;
@@ -22,7 +24,7 @@ const Splash = (props: ISplash) => {
   /**
    * Check if API Key is valid
    */
-  const checkKeyValid = useCallback(async (apiKey) => {
+  const checkKeyValid = useCallback(async apiKey => {
     try {
       setIsLoading(true);
       const api = new API(apiKey);
@@ -37,11 +39,11 @@ const Splash = (props: ISplash) => {
   /**
    * Submit API Key Form
    */
-  const onSubmit = useCallback((e) => {
+  const onSubmit = useCallback(e => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
-    const apiKey = formData.get("apiKey");
+    const apiKey = formData.get('apiKey');
     checkKeyValid(apiKey);
   }, []);
 
@@ -55,8 +57,8 @@ const Splash = (props: ISplash) => {
           <input
             autoComplete="off"
             className={classNames(
-              "rounded text-gray-100 bg-gray-800 p-2 text-base w-full",
-              isLoading && "opacity-75"
+              'rounded text-gray-100 bg-gray-800 p-2 text-base w-full',
+              isLoading && 'opacity-75',
             )}
             disabled={isLoading}
             name="apiKey"
@@ -67,19 +69,17 @@ const Splash = (props: ISplash) => {
       </form>
 
       {isLoading && (
-        <span className="pt-2 text-center block text-gray-300 text-xs">
-          Connecting ...
-        </span>
+        <span className="pt-2 text-center block text-gray-300 text-xs">Connecting ...</span>
       )}
 
       <p className="mt-4 text-gray-200 text-xs text-center">
-        Enter your{" "}
+        Enter your{' '}
         <a
           className="text-neon-blue hover:text-neon-light-blue"
           href="https://dddice.com/account/developer"
         >
           dddice API Key
-        </a>{" "}
+        </a>{' '}
         above to roll 3D dice using your favorite VTT.
       </p>
     </>

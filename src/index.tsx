@@ -1,16 +1,18 @@
-import React, { useCallback, useEffect, useState, useRef } from "react";
-import ReactDOM from "react-dom/client";
+/** @format */
+
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom/client';
 
 import './index.css';
 
-import imageLogo from 'url:./assets/dddice-48x48.png'
-import Loading from './assets/loading.svg'
+import imageLogo from 'url:./assets/dddice-48x48.png';
+import Loading from './assets/loading.svg';
 
 import API, { IStorage, DefaultStorage } from './api';
-import { getStorage, setStorage } from "./storage";
-import Splash from './components/Splash'
-import Rooms from './components/Rooms'
-import Themes from './components/Themes'
+import { getStorage, setStorage } from './storage';
+import Splash from './components/Splash';
+import Rooms from './components/Rooms';
+import Themes from './components/Themes';
 
 const App = () => {
   /**
@@ -21,38 +23,38 @@ const App = () => {
   /**
    * Storage Object
    */
-  const [state, setState] = useState(DefaultStorage)
+  const [state, setState] = useState(DefaultStorage);
 
   /**
    * Loading
    */
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * Connected
    */
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(false);
 
   /**
    * Error
    */
-  const [error, setError] = useState()
+  const [error, setError] = useState();
 
   /**
    * Current VTT
    */
-  const [vtt, setVTT] = useState(undefined)
+  const [vtt, setVTT] = useState(undefined);
 
   /**
    * Rooms
    */
-  const [rooms, setRooms] = useState([])
+  const [rooms, setRooms] = useState([]);
   const currentRoom = useRef(state.room); // for instant access to rooms
 
   /**
    * Themes
    */
-  const [themes, setThemes] = useState([])
+  const [themes, setThemes] = useState([]);
   const currentTheme = useRef(state.theme); // for instant access to themes
 
   /**
@@ -60,171 +62,179 @@ const App = () => {
    */
   useEffect(() => {
     async function connect() {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
       if (/dndbeyond.com/.test(tab.url)) {
-        setIsConnected(true)
-        setVTT('D&DBeyond')
+        setIsConnected(true);
+        setVTT('D&DBeyond');
       }
     }
 
-    connect()
-  }, [])
+    connect();
+  }, []);
 
   useEffect(() => {
     async function initStorage() {
       const [apiKey, room, theme] = await Promise.all([
-        getStorage("apiKey"),
-        getStorage("room"),
-        getStorage("theme"),
+        getStorage('apiKey'),
+        getStorage('room'),
+        getStorage('theme'),
       ]);
 
-      currentRoom.current = room
-      currentTheme.current = theme
+      currentRoom.current = room;
+      currentTheme.current = theme;
 
       setState((storage: IStorage) => ({
         ...storage,
         apiKey,
         room,
         theme,
-      }))
+      }));
     }
 
     if (isConnected) {
-      initStorage()
+      initStorage();
     }
-  }, [isConnected])
+  }, [isConnected]);
 
   useEffect(() => {
     if (state.apiKey) {
       api.current = new API(state.apiKey);
 
       const load = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
 
         try {
-          await api.current.user().get()
+          await api.current.user().get();
         } catch (error) {
-          setError('Problem connecting with dddice')
+          setError('Problem connecting with dddice');
           return;
         }
 
-        const [rooms] = await Promise.all([
-          api.current.room().list(),
-        ])
+        const [rooms] = await Promise.all([api.current.room().list()]);
 
-        setRooms(rooms)
-        setIsLoading(false)
-      }
+        setRooms(rooms);
+        setIsLoading(false);
+      };
 
-      load()
+      load();
     }
-  }, [state.apiKey])
+  }, [state.apiKey]);
 
   const onSearch = useCallback((value: string) => {
     async function search() {
       if (value) {
         const themes = await api.current.diceBox().list(value);
-        setThemes(themes)
+        setThemes(themes);
       } else {
-        setThemes([])
+        setThemes([]);
       }
     }
 
-    search()
-  }, [])
+    search();
+  }, []);
 
   const onKeySuccess = useCallback((apiKey: string) => {
     setState((storage: IStorage) => ({
       ...storage,
       apiKey,
-    }))
-    setStorage({ apiKey })
-  }, [])
+    }));
+    setStorage({ apiKey });
+  }, []);
 
   const onChangeRoom = useCallback((room: string) => {
     setState((storage: IStorage) => ({
       ...storage,
       room,
-    }))
-    setStorage({ room })
-  }, [])
+    }));
+    setStorage({ room });
+  }, []);
 
   const onChangeTheme = useCallback((theme: string) => {
     setState((storage: IStorage) => ({
       ...storage,
       theme,
-    }))
-    setStorage({ theme })
-  }, [])
+    }));
+    setStorage({ theme });
+  }, []);
 
   const onSignOut = useCallback(() => {
     setState((storage: IStorage) => ({
       ...storage,
       apiKey: undefined,
-    }))
-    setStorage({ apiKey: undefined })
-    setError(undefined)
-    setIsLoading(false)
-  }, [])
+    }));
+    setStorage({ apiKey: undefined });
+    setError(undefined);
+    setIsLoading(false);
+  }, []);
 
   /**
    * Render
    */
   return (
     <div className="p-4">
-        <div className="flex flex-col items-center justify-center">
-            <img src={imageLogo} />
-            <span className="text-white text-lg">dddice</span>
+      <div className="flex flex-col items-center justify-center">
+        <img src={imageLogo} />
+        <span className="text-white text-lg">dddice</span>
+      </div>
+
+      {error && (
+        <div className="text-gray-700 mt-4">
+          <p className="text-center text-neon-red">{error}</p>
+          <p className="text-center text-gray-200 mt-1">
+            <button className="text-neon-blue" onClick={onSignOut}>
+              Click here
+            </button>{' '}
+            to sign out and try again.
+          </p>
         </div>
+      )}
 
-        {error && (
-          <div className="text-gray-700 mt-4">
-              <p className="text-center text-neon-red">{error}</p>
-              <p className="text-center text-gray-200 mt-1">
-                <button className="text-neon-blue" onClick={onSignOut}>Click here</button> to sign out and try again.
-              </p>
-          </div>
-        )}
-
-        {isConnected && !error && (
-          <>
-            {isLoading ? (
-              <div className="flex justify-center text-gray-700 mt-4">
-                <Loading className="h-10 w-10 animate-spin-slow" />
-              </div>
-            ) : (
-              <>
-                {!state.apiKey ? (
-                  <Splash onSuccess={onKeySuccess} />
-                ) : (
-                  <>
-                    <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
-                    <Themes selected={state.theme} onChange={onChangeTheme} onSearch={onSearch} themes={themes} />
-                  </>
-                )}
-              </>
-            )}
-          </>
-        )}
-        {!isConnected && (
-          <div className="flex justify-center text-gray-700 mt-4">
-              <span className="text-center text-gray-300">Not connected. Please navigate to a supported VTT.</span>
-          </div>
-        )}
-
-        <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
-          {isConnected && (
+      {isConnected && !error && (
+        <>
+          {isLoading ? (
+            <div className="flex justify-center text-gray-700 mt-4">
+              <Loading className="h-10 w-10 animate-spin-slow" />
+            </div>
+          ) : (
             <>
-              <span className="text-gray-300">Connected to {vtt}</span>
-              <span className="text-gray-700">{' | '}</span>
+              {!state.apiKey ? (
+                <Splash onSuccess={onKeySuccess} />
+              ) : (
+                <>
+                  <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
+                  <Themes
+                    selected={state.theme}
+                    onChange={onChangeTheme}
+                    onSearch={onSearch}
+                    themes={themes}
+                  />
+                </>
+              )}
             </>
           )}
-          dddice v0.0.1
-        </p>
+        </>
+      )}
+      {!isConnected && (
+        <div className="flex justify-center text-gray-700 mt-4">
+          <span className="text-center text-gray-300">
+            Not connected. Please navigate to a supported VTT.
+          </span>
+        </div>
+      )}
+
+      <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
+        {isConnected && (
+          <>
+            <span className="text-gray-300">Connected to {vtt}</span>
+            <span className="text-gray-700">{' | '}</span>
+          </>
+        )}
+        dddice v0.0.1
+      </p>
     </div>
   );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('dddice'))
+const root = ReactDOM.createRoot(document.getElementById('dddice'));
 root.render(<App />);

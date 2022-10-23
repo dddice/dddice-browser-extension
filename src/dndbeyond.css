@@ -1,3 +1,5 @@
+/** @format */
+
 .integrated-dice__container * {
-     pointer-events: none;
+  pointer-events: none;
 }

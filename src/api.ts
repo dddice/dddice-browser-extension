@@ -1,9 +1,11 @@
 /**
  * API
+ *
+ * @format
  */
 
-import axios from "axios";
-import dotenv from "dotenv";
+import axios from 'axios';
+import dotenv from 'dotenv';
 dotenv.config();
 
 const API_URI = process.env.API_URI;
@@ -41,8 +43,8 @@ class API {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
 
-    axios.defaults.headers.common["Authorization"] = `Bearer ${this.apiKey}`;
-    axios.defaults.headers.common["Content-Type"] = `application/json`;
+    axios.defaults.headers.common['Authorization'] = `Bearer ${this.apiKey}`;
+    axios.defaults.headers.common['Content-Type'] = `application/json`;
   }
 
   public user = () => ({
@@ -65,7 +67,7 @@ class API {
 
   public diceBox = () => ({
     list: async (filter?: string) => {
-      const query = filter ? `?filter=${filter}` : "";
+      const query = filter ? `?filter=${filter}` : '';
       return (await axios.get(`${API_URI}/dice-box${query}`)).data.data;
     },
   });
