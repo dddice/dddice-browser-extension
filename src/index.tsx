@@ -121,12 +121,10 @@ const App = () => {
     }
   }, [state.apiKey]);
 
-  /**
-   * Convince Function to reload the current tab. Hacky way to solve room connection race conditions
-   * TODO: do something better to communicate state changes between the dropdown menu and the code running on pgae
-   */
-  const reloadTab = async () => {
-    chrome.tabs.reload();
+  const reloadDiceEngine = async apiKey => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'reloadDiceEngine', apiKey });
+    });
   };
 
   const onSearch = useCallback((value: string) => {
@@ -148,7 +146,7 @@ const App = () => {
       apiKey,
     }));
     setStorage({ apiKey });
-    reloadTab();
+    reloadDiceEngine();
   }, []);
 
   const onChangeRoom = useCallback((room: string) => {
@@ -157,7 +155,7 @@ const App = () => {
       room,
     }));
     setStorage({ room });
-    reloadTab();
+    reloadDiceEngine();
   }, []);
 
   const onChangeTheme = useCallback((theme: string) => {

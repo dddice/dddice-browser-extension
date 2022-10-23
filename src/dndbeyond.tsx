@@ -6,6 +6,7 @@ import { getStorage } from './storage';
 import './index.css';
 import './dndbeyond.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
+import api from './api';
 
 require('dddice-js');
 
@@ -24,6 +25,8 @@ function init() {
     element.addEventListener('pointerover', onPointerOver, true);
     element.addEventListener('pointerout', onPointerOut, true);
   });
+
+  if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
 }
 
 function onPointerOver() {
@@ -159,18 +162,219 @@ async function rollCreate(count: number, type: string, modifier: number, operato
   await api.roll().create({ dice, room, operator });
 }
 
+/**
+ * Translate d10xs into d100s for icon purposes
+ */
+function translateD10xs(die) {
+  return die === 'd10x' ? 'd100' : die;
+}
+
+function diceSizeCompare(die1, die2) {
+  return translateD10xs(die1).split('d')[1] - translateD10xs(die2).split('d')[1];
+}
+
+function generateChatMessage(roll) {
+  const diceBreakdown = roll.values
+    .filter(die => !die.is_dropped)
+    .reduce(
+      (prev, current) =>
+        prev +
+        (prev !== '' && current.value_to_display[0] !== '-' ? '+' : '') +
+        (typeof current.value_to_display === 'object' ? '⚠' : current.value_to_display),
+      '',
+    );
+
+  const largestDie = translateD10xs(
+    roll.values.reduce(
+      (prev, current) => (diceSizeCompare(prev, current.type) > 0 ? prev : current.type),
+      'd4',
+    ),
+  );
+
+  const dieEquation = Object.entries(
+    roll.values
+      .filter(die => !die.is_dropped)
+      .reduce((prev, current) => {
+        if (prev[current.type]) {
+          prev[current.type] += current.type === 'mod' ? current.value : 1;
+        } else {
+          prev[current.type] = current.type === 'mod' ? current.value : 1;
+        }
+        return prev;
+      }, {}),
+  ).reduce(
+    (prev, [type, count]) =>
+      prev + (prev !== '' && count >= 0 ? '+' : '') + count + (type !== 'mod' ? type : ''),
+    '',
+  );
+
+  const chatMessageElement = document.createElement('div');
+  chatMessageElement.id = `noty_bar_${crypto.randomUUID()}`;
+  chatMessageElement.className =
+    'noty_bar noty_type__alert noty_theme__valhalla noty_close_with_click animated faster bounceInUp';
+  chatMessageElement.addEventListener('click', () => removeChatMessage(chatMessageElement));
+  chatMessageElement.innerHTML =
+    "    <div class='noty_body'>\n" +
+    "      <div class='dice_result '>\n" +
+    "        <div class='dice_result__info'>\n" +
+    "          <div class='dice_result__info__title'>\n" +
+    "            <span class='dice_result__info__rolldetail'>dddice: </span><span\n" +
+    "            class='dice_result__rolltype rolltype_roll' style='color:#35cce6'>roll</span>\n" +
+    '          </div>\n' +
+    '\n' +
+    "          <div class='dice_result__info__results'>\n" +
+    '\n' +
+    `            <span class='dice-icon-die dice-icon-die--${largestDie}' alt=''></span>\n` +
+    '\n' +
+    `            <span class='dice_result__info__breakdown' title='${diceBreakdown}'>${diceBreakdown}</span>\n` +
+    '          </div>\n' +
+    `          <span class='dice_result__info__dicenotation' title='${dieEquation}'>${dieEquation}</span>\n` +
+    '        </div>\n' +
+    "        <span class='dice_result__divider dice_result__divider--'></span>\n" +
+    "        <div class='dice_result__total-container'>\n" +
+    '\n' +
+    `          <span class='dice_result__total-result dice_result__total-result-'>${
+      typeof roll.total_value === 'object' ? '⚠' : roll.total_value
+    }</span>\n` +
+    '        </div>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    "    <div class='noty_progressbar'></div>\n";
+  return chatMessageElement;
+}
+
+function removeChatMessage(element: HTMLElement) {
+  element.className += ' animated faster bounceOutRight';
+  setTimeout(
+    element => {
+      stopObservingChatMessages();
+      element.remove();
+      const chatMessages = document.getElementsByClassName('noty_bar');
+      if (chatMessages.length === 0) clearChat();
+      startObservingChatMessages();
+    },
+    500,
+    element,
+  );
+}
+
+function startObservingChatMessages() {
+  chatObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopObservingChatMessages() {
+  chatObserver.disconnect();
+}
+
+function pruneChat() {
+  stopObservingChatMessages();
+  const chatMessages = document.getElementsByClassName('noty_bar');
+
+  const messagesToRemove = [];
+  for (let i = 0; i < chatMessages.length - 1; i++) {
+    // if there are more than 3 messages remove some
+    if (i < chatMessages.length - 3) {
+      // need to delay the removal as removing them during iteration can change the iteration order
+      messagesToRemove.push(chatMessages[i]);
+    } else {
+      chatMessages[i].classList.replace('noty_theme__valhalla', 'noty_theme__valhalla-min');
+    }
+  }
+  messagesToRemove.forEach(element => removeChatMessage(element));
+  startObservingChatMessages();
+}
+
+function clearChat() {
+  const chatMessages = document.getElementsByClassName('noty_bar');
+
+  const elementsToRemove = [];
+  for (let i = 0; i < chatMessages.length; i++) {
+    elementsToRemove.push(chatMessages[i]);
+    chatMessages[i].className += ' animated faster bounceOutRight';
+  }
+  const controls = document.getElementsByClassName('dice_notification_controls');
+  for (let i = 0; i < controls.length; i++) {
+    elementsToRemove.push(controls[i]);
+    controls[i].className += ' animated bounceOutRight';
+  }
+  setTimeout(() => {
+    stopObservingChatMessages();
+    elementsToRemove.forEach(element => removeChatMessage(element));
+    startObservingChatMessages();
+  }, 500);
+}
+
+function updateChat(roll) {
+  // add canvas element to document
+  let chatDiv = document.getElementById('noty_layout__bottomRight');
+
+  if (!chatDiv) {
+    chatDiv = document.createElement('div');
+    chatDiv.id = 'noty_layout__bottomRight';
+    chatDiv.className = 'noty_layout uncollapse';
+    document.body.appendChild(chatDiv);
+  }
+
+  if (document.getElementsByClassName('dice_notification_controls').length === 0) {
+    const collapseButton = document.createElement('div');
+    collapseButton.className = 'dice_notification_control dice_notification_controls__uncollapse';
+    collapseButton.innerHTML = '<i></i>';
+    collapseButton.addEventListener('click', () => {
+      chatDiv.classList.toggle('uncollapse');
+      chatDiv.classList.toggle('collapse');
+    });
+
+    const clearAllButton = document.createElement('div');
+    clearAllButton.className = 'dice_notification_control dice_notification_controls__clear';
+    clearAllButton.innerHTML = '<span>Clear All</span><i></i>';
+    clearAllButton.addEventListener('click', () => clearChat());
+
+    const notificationControls = document.createElement('div');
+    notificationControls.className = 'dice_notification_controls';
+
+    notificationControls.appendChild(clearAllButton);
+    notificationControls.appendChild(collapseButton);
+    chatDiv.appendChild(notificationControls);
+  } else {
+    const clearAllButton = document.getElementsByClassName('dice_notification_controls__clear')[0];
+    clearAllButton.addEventListener('click', () => clearChat());
+  }
+
+  const notificationControls = chatDiv.getElementsByClassName('dice_notification_controls')[0];
+
+  notificationControls.insertAdjacentElement('beforebegin', generateChatMessage(roll));
+}
+
+function initializeSDK() {
+  Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
+    if (apiKey) {
+      dddice = new (window as any).ThreeDDice(canvasElement, apiKey);
+      dddice.addAction('roll:finished', roll => updateChat(roll));
+      dddice.start();
+      if (room) {
+        dddice.connect(room);
+      }
+    }
+  });
+}
+
 // add canvas element to document
 const canvasElement = document.createElement('canvas');
 canvasElement.id = 'dddice-canvas';
 canvasElement.className = 'fixed top-0 z-50 h-screen w-screen opacity-100 pointer-events-none';
 document.body.appendChild(canvasElement);
 
+let dddice;
+// clear all dice on any click, just like d&d beyond does
+document.body.addEventListener('click', () => dddice.clear());
 // init dddice object
-Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
-  //@ts-ignore
-  const dddice = new window.ThreeDDice(canvasElement, apiKey);
-  dddice.connect(room);
-  dddice.start();
+initializeSDK();
+
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+  switch (message.type) {
+    case 'reloadDiceEngine':
+      initializeSDK();
+  }
 });
 
 window.addEventListener('load', () => init());
@@ -180,8 +384,11 @@ window.addEventListener('resize', () => init());
 // to observe the body, but getting more specific hooks us into
 // implementation details of D&D Beyond
 const observer = new MutationObserver(() => init());
-observer.observe(document.body, {
+observer.observe(document.getElementById('site-main'), {
   attributes: true,
   childList: true,
   subtree: true,
 });
+
+const chatObserver = new MutationObserver(() => pruneChat());
+startObservingChatMessages();
