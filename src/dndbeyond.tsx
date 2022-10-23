@@ -7,6 +7,8 @@ import './index.css';
 import './dndbeyond.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
 
+require('dddice-js');
+
 const RETRY_TIMEOUT = 100;
 const FADE_TIMEOUT = 100;
 /**
@@ -156,6 +158,20 @@ async function rollCreate(count: number, type: string, modifier: number, operato
   await api.room().updateRolls(room, { is_cleared: true });
   await api.roll().create({ dice, room, operator });
 }
+
+// add canvas element to document
+const canvasElement = document.createElement('canvas');
+canvasElement.id = 'dddice-canvas';
+canvasElement.className = 'fixed top-0 z-50 h-screen w-screen opacity-100 pointer-events-none';
+document.body.appendChild(canvasElement);
+
+// init dddice object
+Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
+  //@ts-ignore
+  const dddice = new window.ThreeDDice(canvasElement, apiKey);
+  dddice.connect(room);
+  dddice.start();
+});
 
 window.addEventListener('load', () => init());
 window.addEventListener('resize', () => init());

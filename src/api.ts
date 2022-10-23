@@ -8,7 +8,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const API_URI = process.env.API_URI;
+const API_URI = process.env.API_URI ?? 'https://dddice.com/api/1.0';
 
 export const DefaultStorage: IStorage = {
   apiKey: undefined,

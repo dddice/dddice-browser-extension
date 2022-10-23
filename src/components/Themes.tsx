@@ -60,6 +60,7 @@ const Themes = (props: IThemes) => {
         className="p-2 bg-gray-800 rounded w-full text-gray-100"
         key={selected}
         defaultValue={selected}
+        placeholder="Start typing a theme name..."
         onChange={e => onSearch(e.target.value)}
       />
       <ul className="mt-2">
