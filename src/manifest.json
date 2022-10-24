@@ -14,13 +14,14 @@
   "content_scripts": [
     {
       "js": ["dndbeyond.tsx"],
+      "css": ["dndbeyond.css"],
       "matches": ["*://*.dndbeyond.com/*characters/*"]
     }
   ],
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": ["canvas.html", "dndbeyond.css", "assets/dddice-32x32.png"],
+      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
       "matches": ["https://www.dndbeyond.com/*"]
     }
   ]
