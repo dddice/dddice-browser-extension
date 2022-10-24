@@ -123,6 +123,9 @@ function onPointerUp(overlayId, operator = {}) {
     } else if (/-\d*/.test(text)) {
       const [num] = /-(\d*)/.exec(text);
       modifier = Number(num);
+    } else if (!isNaN(+text)) {
+      // convert raw stat into modifier
+      modifier = Math.floor(Number(text) / 2) - 5;
     }
 
     // close the overlay
