@@ -1,0 +1,80 @@
+# @format
+#
+# Release to various browser extension stores
+
+name: 'Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag'
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.tag }}
+
+    steps:
+      - name: Setup Volta
+        uses: volta-cli/action@v4
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Update Version
+        run: |
+          npm --no-git-tag-version --allow-same-version version $VERSION
+          MANIFEST=$(cat src/manifest.json | jq ".version |= \"${VERSION/v/}\"")
+          echo "$MANIFEST" > src/manifest.json
+
+      - name: Tag Release
+        run: |
+          git add .
+          git config user.email "developers@dddice.com"
+          git config user.name "dddice"
+          git commit -m "release: ${{ github.event.inputs.tag }}" || echo 'ok'
+          git push
+          git tag -f ${{ github.event.inputs.tag }}
+          git push -f origin ${{ github.event.inputs.tag }}
+
+      - name: Build Release
+        run: |
+          npm ci
+          npm run build
+
+      - name: Zip Release
+        uses: montudor/action-zip@v1
+        with:
+          args: zip -qq -r dddice-browser-extension.zip dist
+
+      - name: Cache Files
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+
+  upload:
+    name: Upload to Chrome Web Store
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+
+      - name: Publish
+        uses: levigo/github-action-chrome-webstore-publish@v1.0
+        with:
+          extensionId: ${{ secrets.CHROME_WEB_STORE_APP_ID }}
+          clientId: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          clientSecret: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          refreshToken: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+          inputFile: './dddice-browser-extension.zip'
+          doPublish: true
