@@ -2,7 +2,7 @@
   "name": "dddice",
   "description": "Roll 3D digital dice using your favorite browser-based VTT.",
   "manifest_version": 3,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "action": {
     "default_title": "dddice",
     "default_popup": "index.html",
@@ -13,16 +13,30 @@
   },
   "content_scripts": [
     {
-      "js": ["dndbeyond.tsx"],
-      "css": ["dndbeyond.css"],
-      "matches": ["*://*.dndbeyond.com/*characters/*"]
+      "js": [
+        "dndbeyond.tsx"
+      ],
+      "css": [
+        "dndbeyond.css"
+      ],
+      "matches": [
+        "*://*.dndbeyond.com/*characters/*"
+      ]
     }
   ],
-  "permissions": ["storage", "tabs"],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
   "web_accessible_resources": [
     {
-      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
-      "matches": ["https://www.dndbeyond.com/*"]
+      "resources": [
+        "dndbeyond.css",
+        "assets/dddice-32x32.png"
+      ],
+      "matches": [
+        "https://www.dndbeyond.com/*"
+      ]
     }
   ]
 }
