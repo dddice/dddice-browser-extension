@@ -1,9 +1,9 @@
 /** @format */
 
+import './index.css';
+
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-
-import './index.css';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import Loading from './assets/loading.svg';
@@ -238,7 +238,7 @@ const App = () => {
             <span className="text-gray-700">{' | '}</span>
           </>
         )}
-        dddice v0.0.1
+        dddice {process.env.VERSION}
       </p>
     </div>
   );

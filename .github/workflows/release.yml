@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.event.inputs.tag }}
+      NODE_ENV: production
 
     steps:
       - name: Setup Volta
