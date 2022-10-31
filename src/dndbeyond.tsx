@@ -6,8 +6,7 @@ import { getStorage } from './storage';
 import './index.css';
 import './dndbeyond.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
-import api from './api';
-
+import { IRoll } from 'dddice-js';
 require('dddice-js');
 
 const RETRY_TIMEOUT = 100;
@@ -176,7 +175,7 @@ function diceSizeCompare(die1, die2) {
   return translateD10xs(die1).split('d')[1] - translateD10xs(die2).split('d')[1];
 }
 
-function generateChatMessage(roll) {
+function generateChatMessage(roll: IRoll) {
   const diceBreakdown = roll.values
     .filter(die => !die.is_dropped)
     .reduce(
@@ -192,23 +191,6 @@ function generateChatMessage(roll) {
       (prev, current) => (diceSizeCompare(prev, current.type) > 0 ? prev : current.type),
       'd4',
     ),
-  );
-
-  const dieEquation = Object.entries(
-    roll.values
-      .filter(die => !die.is_dropped)
-      .reduce((prev, current) => {
-        if (prev[current.type]) {
-          prev[current.type] += current.type === 'mod' ? current.value : 1;
-        } else {
-          prev[current.type] = current.type === 'mod' ? current.value : 1;
-        }
-        return prev;
-      }, {}),
-  ).reduce(
-    (prev, [type, count]) =>
-      prev + (prev !== '' && count >= 0 ? '+' : '') + count + (type !== 'mod' ? type : ''),
-    '',
   );
 
   const chatMessageElement = document.createElement('div');
@@ -231,7 +213,7 @@ function generateChatMessage(roll) {
     '\n' +
     `            <span class='dice_result__info__breakdown' title='${diceBreakdown}'>${diceBreakdown}</span>\n` +
     '          </div>\n' +
-    `          <span class='dice_result__info__dicenotation' title='${dieEquation}'>${dieEquation}</span>\n` +
+    `          <span class='dice_result__info__dicenotation' title='${roll.equation}'>${roll.equation}</span>\n` +
     '        </div>\n' +
     "        <span class='dice_result__divider dice_result__divider--'></span>\n" +
     "        <div class='dice_result__total-container'>\n" +

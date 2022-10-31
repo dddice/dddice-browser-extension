@@ -11,7 +11,7 @@
     "start:firefox": "web-ext run --source-dir ./src"
   },
   "dependencies": {
-    "dddice-js": "^0.6.3"
+    "dddice-js": "^0.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
