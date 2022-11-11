@@ -1,3 +1,4 @@
 node_modules
 src/vendor
 tailwind.config.js
+dist

@@ -67,6 +67,9 @@ const App = () => {
       if (/dndbeyond.com/.test(tab.url)) {
         setIsConnected(true);
         setVTT('D&DBeyond');
+      } else if (/roll20.net/.test(tab.url)) {
+        setIsConnected(true);
+        setVTT('roll20');
       }
     }
 

@@ -13,30 +13,25 @@
   },
   "content_scripts": [
     {
-      "js": [
-        "dndbeyond.tsx"
-      ],
-      "css": [
-        "dndbeyond.css"
-      ],
-      "matches": [
-        "*://*.dndbeyond.com/*characters/*"
-      ]
+      "js": ["./dndbeyond.ts"],
+      "css": ["./dndbeyond.css"],
+      "matches": ["*://*.dndbeyond.com/*characters/*"]
+    },
+    {
+      "js": ["./roll20.ts"],
+      "css": ["./roll20.css"],
+      "matches": ["*://*.roll20.net/*"]
     }
   ],
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": [
-        "dndbeyond.css",
-        "assets/dddice-32x32.png"
-      ],
-      "matches": [
-        "https://www.dndbeyond.com/*"
-      ]
+      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
+      "matches": ["https://www.dndbeyond.com/*"]
+    },
+    {
+      "resources": ["roll20.css", "assets/dddice-32x32.png"],
+      "matches": ["https://*.roll20.net/*"]
     }
   ]
 }

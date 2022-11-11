@@ -355,6 +355,7 @@ document.body.addEventListener('click', () => dddice.clear());
 // init dddice object
 initializeSDK();
 
+// @ts-ignore
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
