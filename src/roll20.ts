@@ -6,11 +6,7 @@ import API from './api';
 import createLogger from './log';
 import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 import { getStorage } from './storage';
-import {
-  convertCoCRollToDddiceRoll,
-  convertInlineRollToDddiceRoll,
-  convertRoll20RollToDddiceRoll,
-} from './rollConverters';
+import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
 
 enum RollMessageType {
   not_a_roll,
@@ -169,8 +165,8 @@ function watchForRollToMake(mutations: MutationRecord[]) {
           const rollMessageType: RollMessageType = messageRollType(node);
           if (rollMessageType && !node.classList.contains('dddiceRoll')) {
             log.info('found a roll', node);
-            pickUpRolls();
             node.classList.add('hidden');
+            await pickUpRolls();
             external_id = node.getAttribute('data-messageid');
 
             if (node.classList.contains('you')) {
@@ -187,18 +183,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                   break;
                 }
 
-                case RollMessageType.CoC: {
-                  const rollNode = node.querySelector(
-                    '.sheet-coc-roll__result > .sheet-coc-roll__roll > .inlinerollresult',
-                  );
-                  equation = rollNode.getAttribute('title').match(/rolling (.*?) =/i)[1];
-                  const result = rollNode.textContent;
-
-                  dice = await convertCoCRollToDddiceRoll(equation, result);
-                  await rollCreate(dice, external_id, node, equation);
-                  break;
-                }
-
+                case RollMessageType.CoC:
                 case RollMessageType.inline: {
                   const rollNodes = node.querySelectorAll('.inlinerollresult');
                   for (const rollNode of rollNodes) {

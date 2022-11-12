@@ -55,41 +55,6 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
   return dice;
 }
 
-export async function convertCoCRollToDddiceRoll(equation, result) {
-  const theme = await getStorage('theme');
-  const dice = [];
-
-  const parsedEquation = Parser.parse(equation);
-
-  let sign = 1;
-  parsedEquation.forEach(term => {
-    if (term.sides && term.qty) {
-      for (let i = 0; i < term.qty; i++) {
-        if (term.sides === 100) {
-          convertD100toD10x(theme, result).map(die => dice.push(die));
-        } else {
-          dice.push({
-            theme,
-            type: `d${term.sides}`,
-            value: parseInt(result) + 1, // super hack because CoC always rolls d10-1
-          });
-        }
-      }
-    } else if (term === '+') {
-      sign = 1;
-    } else if (term === '-') {
-      sign = -1;
-    } else {
-      dice.push({
-        theme,
-        type: 'mod',
-        value: sign * parseInt(term),
-      });
-    }
-  });
-  return dice;
-}
-
 export async function convertInlineRollToDddiceRoll(equation, result) {
   const theme = await getStorage('theme');
   const dice = [];
