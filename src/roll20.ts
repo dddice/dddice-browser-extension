@@ -4,15 +4,18 @@ import './dndbeyond.css';
 import './index.css';
 import API from './api';
 import createLogger from './log';
-import { IDiceRoll, IRoll, IRollValue } from 'dddice-js';
-import { ThreeDDiceRollEvent, ThreeDDice } from 'dddice-js';
+import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 import { getStorage } from './storage';
-
-import { Parser } from '@dice-roller/rpg-dice-roller';
+import {
+  convertCoCRollToDddiceRoll,
+  convertInlineRollToDddiceRoll,
+  convertRoll20RollToDddiceRoll,
+} from './rollConverters';
 
 enum RollMessageType {
   not_a_roll,
   general,
+  inline,
   CoC,
   DnD5e,
 }
@@ -24,6 +27,7 @@ const log = createLogger('roll20 extension');
 log.info('DDDICE ROLL20');
 
 let chatHasLoaded = false;
+let isActiveRoll = false;
 
 /**
  * Initialize listeners on all attacks
@@ -33,13 +37,31 @@ function init() {
   if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
 }
 
-async function rollCreate(external_id: string, dice: IDiceRoll[], operator = {}) {
+async function pickUpRolls() {
+  const [apiKey, room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
+  const api = new API(apiKey);
+  await api.room().updateRolls(room, { is_cleared: true });
+}
+
+async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
   const [apiKey, room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
 
   const api = new API(apiKey);
 
-  await api.room().updateRolls(room, { is_cleared: true });
-  return await api.roll().create({ dice, room, operator, external_id });
+  const operator = convertOperators(equation);
+
+  if (dice.length > 0) {
+    log.info('the die is cast', equation);
+    try {
+      const roll: IRoll = await api.roll().create({ dice, room, operator, external_id });
+      node.setAttribute('data-dddice-roll-uuid', roll.uuid);
+    } catch (e) {
+      log.error(e);
+      node.classList.remove('hidden');
+    }
+  } else {
+    node.classList.remove('hidden');
+  }
 }
 
 /**
@@ -103,55 +125,6 @@ function domElementIsInClass(node, classNames) {
   return classNameArray.reduce((prev, current) => prev && node.classList?.contains(current), true);
 }
 
-function convertD100toD10x(theme, value) {
-  return [
-    {
-      theme,
-      type: 'd10x',
-      value: Math.ceil(value / 10 - 1),
-      value_to_display: `${Math.ceil(value / 10 - 1) * 10}`,
-    },
-    { theme, type: 'd10', value: ((value - 1) % 10) + 1 },
-  ];
-}
-
-async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
-  const theme = await getStorage('theme');
-  const dice = [];
-  roll20Roll.querySelectorAll('.diceroll').forEach(die => {
-    let type = null;
-    const value = parseInt(die.querySelector('.didroll').textContent);
-    die.classList.forEach(className => {
-      if (className !== 'dropped' && className.startsWith('d')) {
-        type = className;
-      }
-    });
-    if (type === 'd100') {
-      convertD100toD10x(theme, value).map(die => dice.push(die));
-    } else {
-      dice.push({
-        theme,
-        type,
-        value,
-      });
-    }
-  });
-  roll20Roll.childNodes.forEach(node => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      log.debug('modifiers', node.textContent);
-      for (const modifier of node.textContent.matchAll(/[-+]\d/g)) {
-        log.debug(modifier);
-        dice.push({
-          theme,
-          type: 'mod',
-          value: parseInt(modifier[0]),
-        });
-      }
-    }
-  });
-  return dice;
-}
-
 function convertOperators(equation: string) {
   const operator = {};
   const keep = equation.match(/k(l|h)?(\d+)?/);
@@ -176,42 +149,9 @@ function messageRollType(node: Element) {
     return RollMessageType.general;
   } else if (node.querySelector('.sheet-coc-roll__container')) {
     return RollMessageType.CoC;
+  } else if (node.querySelector('.inlinerollresult ')) {
+    return RollMessageType.inline;
   }
-}
-
-async function convertCoCRollToDddiceRoll(equation, result) {
-  const theme = await getStorage('theme');
-  const dice = [];
-
-  const parsedEquation = Parser.parse(equation);
-
-  let sign = 1;
-  parsedEquation.forEach(term => {
-    if (term.sides && term.qty) {
-      for (let i = 0; i < term.qty; i++) {
-        if (term.sides === 100) {
-          convertD100toD10x(theme, result).map(die => dice.push(die));
-        } else {
-          dice.push({
-            theme,
-            type: `d${term.sides}`,
-            value: parseInt(result) + 1, // super hack because CoC always rolls d10-1
-          });
-        }
-      }
-    } else if (term === '+') {
-      sign = 1;
-    } else if (term === '-') {
-      sign = -1;
-    } else {
-      dice.push({
-        theme,
-        type: 'mod',
-        value: sign * parseInt(term),
-      });
-    }
-  });
-  return dice;
 }
 
 function watchForRollToMake(mutations: MutationRecord[]) {
@@ -229,6 +169,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
           const rollMessageType: RollMessageType = messageRollType(node);
           if (rollMessageType && !node.classList.contains('dddiceRoll')) {
             log.info('found a roll', node);
+            pickUpRolls();
             node.classList.add('hidden');
             external_id = node.getAttribute('data-messageid');
 
@@ -242,7 +183,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                   dice = await convertRoll20RollToDddiceRoll(
                     node.querySelector('.formattedformula'),
                   );
-
+                  await rollCreate(dice, external_id, node, equation);
                   break;
                 }
 
@@ -254,20 +195,26 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                   const result = rollNode.textContent;
 
                   dice = await convertCoCRollToDddiceRoll(equation, result);
+                  await rollCreate(dice, external_id, node, equation);
                   break;
                 }
-              }
 
-              operator = convertOperators(equation);
+                case RollMessageType.inline: {
+                  const rollNodes = node.querySelectorAll('.inlinerollresult');
+                  for (const rollNode of rollNodes) {
+                    let _;
+                    let result;
+                    [_, equation, result] = rollNode
+                      .getAttribute('title')
+                      .replace(/\[.*?]/g, '')
+                      .match(/rolling ([%*+\-/^.0-9dkh]*).* = (.*)/i) ?? [null, null, null];
 
-              if (dice.length > 0) {
-                log.info('the die is cast', equation);
-                try {
-                  const roll: IRoll = await rollCreate(external_id, dice, operator);
-                  node.setAttribute('data-dddice-roll-uuid', roll.uuid);
-                } catch (e) {
-                  log.error(e);
-                  node.classList.remove('hidden');
+                    if (equation && result) {
+                      dice = await convertInlineRollToDddiceRoll(equation, result);
+                      await rollCreate(dice, external_id, node, equation);
+                    }
+                  }
+                  break;
                 }
               }
             }
@@ -281,6 +228,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
 }
 
 function updateChat(roll) {
+  isActiveRoll = false;
   const rollMessageElement = document.querySelector(`[data-messageid='${roll.external_id}']`);
 
   if (rollMessageElement) {
@@ -320,9 +268,11 @@ canvasElement.style.height = '100vh';
 canvasElement.style.width = '100vw';
 document.body.appendChild(canvasElement);
 
-let dddice;
+let dddice: ThreeDDice;
 // clear all dice on any click, just like d&d beyond does
-document.body.addEventListener('click', () => dddice.clear());
+document.addEventListener('click', () => {
+  if (!isActiveRoll) dddice.clear();
+});
 // init dddice object
 initializeSDK();
 
