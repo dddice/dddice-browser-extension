@@ -20,7 +20,7 @@
     {
       "js": ["./roll20.ts"],
       "css": ["./roll20.css"],
-      "matches": ["*://*.roll20.net/*"]
+      "matches": ["*://*.roll20.net/editor/"]
     }
   ],
   "permissions": ["storage", "tabs"],
