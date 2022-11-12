@@ -30,7 +30,7 @@
       "matches": ["https://www.dndbeyond.com/*"]
     },
     {
-      "resources": ["roll20.css", "assets/dddice-32x32.png"],
+      "resources": ["roll20.css", "assets/dddice-48x48.png"],
       "matches": ["https://*.roll20.net/*"]
     }
   ]

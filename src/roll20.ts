@@ -7,6 +7,7 @@ import createLogger from './log';
 import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 import { getStorage } from './storage';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
+import imageLogo from 'url:./assets/dddice-48x48.png';
 
 enum RollMessageType {
   not_a_roll,
@@ -67,6 +68,26 @@ function translateD10xs(die) {
   return die === 'd10x' ? 'd10' : die;
 }
 
+function addLoadingMessage() {
+  if (!document.getElementById('dddice-loading-message')) {
+    const chatElement = document.querySelector('#textchat > div.content');
+
+    const chatMessageElement = document.createElement('div');
+    chatMessageElement.id = 'dddice-loading-message';
+    chatMessageElement.innerHTML = `
+        <div class='spacer'></div>
+        <img src="${imageLogo}" class="rounded-full bg-gray-700 animate-pulse h-10 mx-auto mt-4 p-2">
+`;
+
+    chatElement.appendChild(chatMessageElement);
+    chatMessageElement.scrollIntoView();
+  }
+}
+
+function removeLoadingMessage() {
+  document.getElementById('dddice-loading-message')?.remove();
+}
+
 function generateChatMessage(roll: IRoll) {
   const diceBreakdown = roll.values.reduce(
     (prev: string, current: IRollValue) =>
@@ -91,8 +112,10 @@ function generateChatMessage(roll: IRoll) {
   chatMessageElement.className = 'message rollresult quantumRoll dddiceRoll';
   chatMessageElement.innerHTML = `
       <div class="spacer"></div>
-      <div class="avatar" aria-hidden="true"><img src="https://cdn.dddice.com/images/logo-light-fs8.png" class="bg-gray-900"></div>
-      <span class="tstamp" aria-hidden="true">3:54PM</span><span class="by">${
+      <div class="avatar">
+        <img src="${imageLogo}" class="rounded-full bg-gray-700 h-8 mx-auto p-2">
+      </div>
+      <span class="tstamp"></span><span class="by">${
         roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
           .username
       }</span>
@@ -151,7 +174,6 @@ function messageRollType(node: Element) {
 }
 
 function watchForRollToMake(mutations: MutationRecord[]) {
-  let operator;
   let external_id;
   let dice;
   let equation;
@@ -166,6 +188,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
           if (rollMessageType && !node.classList.contains('dddiceRoll')) {
             log.info('found a roll', node);
             node.classList.add('hidden');
+            addLoadingMessage();
             await pickUpRolls();
             external_id = node.getAttribute('data-messageid');
 
@@ -214,16 +237,17 @@ function watchForRollToMake(mutations: MutationRecord[]) {
 
 function updateChat(roll) {
   isActiveRoll = false;
+  removeLoadingMessage();
   const rollMessageElement = document.querySelector(`[data-messageid='${roll.external_id}']`);
 
   if (rollMessageElement) {
     rollMessageElement.classList.remove('hidden');
     rollMessageElement.scrollIntoView();
   } else {
-    const notificationControls = document.querySelector('#textchat > div.content');
+    const chatElement = document.querySelector('#textchat > div.content');
 
     const newChat = generateChatMessage(roll);
-    notificationControls.appendChild(newChat);
+    chatElement.appendChild(newChat);
     newChat.scrollIntoView();
   }
 }
