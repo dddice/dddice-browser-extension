@@ -31,6 +31,11 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   /**
+   * Loading
+   */
+  const [loadingMessage, setLoadingMessage] = useState('');
+
+  /**
    * Connected
    */
   const [isConnected, setIsConnected] = useState(false);
@@ -108,6 +113,7 @@ const App = () => {
         setIsLoading(true);
 
         try {
+          setLoadingMessage('logging in');
           await api.current.user().get();
         } catch (error) {
           setError('Problem connecting with dddice');
@@ -115,12 +121,16 @@ const App = () => {
         }
 
         let themes = [];
-        let [rooms, _themes] = await Promise.all([
-          api.current.room().list(),
-          api.current.diceBox().list(),
-        ]);
+        setLoadingMessage('loading rooms list');
+        let rooms = await api.current.room().list();
         rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
+
+        setLoadingMessage('loading themes');
+        let _themes = await api.current.diceBox().list();
+
+        const page = 2;
         while (_themes) {
+          setLoadingMessage(`loading themes pg. ${page}`);
           themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
           _themes = await api.current.diceBox().next();
         }
@@ -214,8 +224,9 @@ const App = () => {
       {isConnected && !error && (
         <>
           {isLoading ? (
-            <div className="flex justify-center text-gray-700 mt-4">
-              <Loading className="h-10 w-10 animate-spin-slow" />
+            <div className="flex flex-col justify-center text-gray-700 mt-4">
+              <Loading className="flex h-10 w-10 animate-spin-slow m-auto" />
+              <div className="flex m-auto">{loadingMessage}</div>
             </div>
           ) : (
             <>
