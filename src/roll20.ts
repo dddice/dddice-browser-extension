@@ -24,7 +24,6 @@ const log = createLogger('roll20 extension');
 log.info('DDDICE ROLL20');
 
 let chatHasLoaded = false;
-let isActiveRoll = false;
 
 /**
  * Initialize listeners on all attacks
@@ -236,7 +235,6 @@ function watchForRollToMake(mutations: MutationRecord[]) {
 }
 
 function updateChat(roll) {
-  isActiveRoll = false;
   removeLoadingMessage();
   const rollMessageElement = document.querySelector(`[data-messageid='${roll.external_id}']`);
 
@@ -280,7 +278,7 @@ document.body.appendChild(canvasElement);
 let dddice: ThreeDDice;
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (!isActiveRoll) dddice.clear();
+  if (!dddice.isDiceThrowing) dddice.clear();
 });
 // init dddice object
 initializeSDK();

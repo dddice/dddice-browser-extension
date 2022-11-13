@@ -351,7 +351,9 @@ document.body.appendChild(canvasElement);
 
 let dddice;
 // clear all dice on any click, just like d&d beyond does
-document.body.addEventListener('click', () => dddice.clear());
+document.addEventListener('click', () => {
+  if (!dddice.isDiceThrowing) dddice.clear();
+});
 // init dddice object
 initializeSDK();
 
