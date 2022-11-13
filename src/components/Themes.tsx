@@ -4,7 +4,7 @@
  * @format
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import classNames from 'classnames';
 
 import { ITheme } from '../api';
@@ -18,6 +18,8 @@ interface IThemes {
 
 const Themes = (props: IThemes) => {
   const { onSearch, onChange, selected, themes } = props;
+
+  const dataList = useRef<HTMLDataListElement>();
 
   const [highlight, setHighlight] = useState();
 
@@ -61,24 +63,24 @@ const Themes = (props: IThemes) => {
         key={selected}
         defaultValue={selected}
         placeholder="Start typing a theme name..."
-        onChange={e => onSearch(e.target.value)}
+        onBlur={e => onChange(e.target.value)}
+        list={dataList}
       />
-      <ul className="mt-2">
+      <datalist id={dataList} className="mt-2">
         {themes.map((theme, i) => (
-          <li
+          <option
             id={highlight === i ? 'theme-selected' : undefined}
-            data-theme={theme.id}
+            value={theme.id}
             className={classNames(
               'first:rounded-t last:rounded-b p-2 hover:bg-neon-blue cursor-pointer text-white',
               highlight === i ? 'bg-neon-blue' : 'bg-gray-900',
             )}
-            onClick={() => onSelect(theme.id)}
             key={theme.id}
           >
             {theme.name}
-          </li>
+          </option>
         ))}
-      </ul>
+      </datalist>
     </label>
   );
 };

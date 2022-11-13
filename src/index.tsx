@@ -114,9 +114,19 @@ const App = () => {
           return;
         }
 
-        const [rooms] = await Promise.all([api.current.room().list()]);
+        let themes = [];
+        let [rooms, _themes] = await Promise.all([
+          api.current.room().list(),
+          api.current.diceBox().list(),
+        ]);
+        rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
+        while (_themes) {
+          themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
+          _themes = await api.current.diceBox().next();
+        }
 
         setRooms(rooms);
+        setThemes(themes);
         setIsLoading(false);
       };
 

@@ -37,6 +37,7 @@ export interface IUser {
 
 class API {
   private apiKey: string;
+  private links: { prev; next };
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
@@ -67,7 +68,18 @@ class API {
   public diceBox = () => ({
     list: async (filter?: string) => {
       const query = filter ? `?filter=${filter}` : '';
-      return (await axios.get(`${API_URI}/dice-box${query}`)).data.data;
+      const data = (await axios.get(`${API_URI}/dice-box${query}`)).data;
+      this.links = data.links;
+      return data.data;
+    },
+    next: async () => {
+      if (this.links.next) {
+        const data = (await axios.get(this.links.next)).data;
+        this.links = data.links;
+        return data.data;
+      } else {
+        return null;
+      }
     },
   });
 }
