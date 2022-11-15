@@ -74,7 +74,7 @@ const App = () => {
         setVTT('D&DBeyond');
       } else if (/roll20.net/.test(tab.url)) {
         setIsConnected(true);
-        setVTT('roll20');
+        setVTT('Roll20');
       }
     }
 
@@ -113,7 +113,7 @@ const App = () => {
         setIsLoading(true);
 
         try {
-          setLoadingMessage('logging in');
+          setLoadingMessage('Logging in');
           await api.current.user().get();
         } catch (error) {
           setError('Problem connecting with dddice');
@@ -121,16 +121,16 @@ const App = () => {
         }
 
         let themes = [];
-        setLoadingMessage('loading rooms list');
+        setLoadingMessage('Loading rooms list');
         let rooms = await api.current.room().list();
         rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
 
-        setLoadingMessage('loading themes');
+        setLoadingMessage('Loading themes (1)');
         let _themes = await api.current.diceBox().list();
 
         const page = 2;
         while (_themes) {
-          setLoadingMessage(`loading themes pg. ${page}`);
+          setLoadingMessage(`Loading themes (${page})`);
           themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
           _themes = await api.current.diceBox().next();
         }
