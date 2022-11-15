@@ -5,7 +5,7 @@
   "repository": "git@github.com:dddice/dddice-browser-extension.git",
   "author": "dddice <developers@dddice.com>",
   "scripts": {
-    "build": "parcel build src/manifest.json",
+    "build": "./build.sh",
     "lint": "eslint .",
     "start": "parcel watch src/manifest.json --host localhost",
     "start:firefox": "web-ext run --source-dir ./src"
