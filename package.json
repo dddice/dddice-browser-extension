@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.2.1",
-    "dddice-js": "^0.6.8"
+    "dddice-js": "^0.7.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",

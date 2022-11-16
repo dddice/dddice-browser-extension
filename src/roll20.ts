@@ -17,8 +17,6 @@ enum RollMessageType {
   DnD5e,
 }
 
-require('dddice-js');
-
 const log = createLogger('roll20 extension');
 
 log.info('DDDICE ROLL20');
@@ -234,7 +232,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
   }
 }
 
-function updateChat(roll) {
+function updateChat(roll: IRoll) {
   removeLoadingMessage();
   const rollMessageElement = document.querySelector(`[data-messageid='${roll.external_id}']`);
 
@@ -253,8 +251,8 @@ function updateChat(roll) {
 function initializeSDK() {
   Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
     if (apiKey) {
-      dddice = new (window as any).ThreeDDice(canvasElement, apiKey);
-      dddice.addAction('roll:finished', roll => updateChat(roll));
+      dddice = new ThreeDDice(canvasElement, apiKey);
+      dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
       dddice.start();
       if (room) {
         dddice.connect(room);
