@@ -16,25 +16,75 @@ const RETRY_TIMEOUT = 100;
 const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
 
-const clickListeners = [];
+let customRoll: Record<string, number> = {};
 /**
  * Initialize listeners on all attacks
  */
 function init() {
-  const diceElements = document.querySelectorAll('.integrated-dice__container');
+  const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
+  const characterSheetDiceElements = document.querySelectorAll('.integrated-dice__container');
+  const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
+  const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
+  if (
+    characterSheetDiceElements.length === 0 ||
+    diceMenuDiceElements.length === 0 ||
+    !rollButton ||
+    !customRollMenuButton
+  )
+    return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
-  if (diceElements.length === 0) return setTimeout(init, RETRY_TIMEOUT); // retry if missing
-
-  diceElements.forEach(element => {
-    log.debug('add listeners');
+  // Add listeners to character sheet roll buttons
+  characterSheetDiceElements.forEach(element => {
     // Add listener to send roll to dddice
     element.addEventListener('pointerover', onPointerOver, true);
     element.addEventListener('pointerout', onPointerOut, true);
-    element.removeEventListener('click', clickHandler, true);
-    element.addEventListener('click', clickHandler, true);
+    element.removeEventListener('click', rollFromCharacterSheet, true);
+    element.addEventListener('click', rollFromCharacterSheet, true);
   });
 
+  // Add listeners to the left-hand dice menu
+  diceMenuDiceElements.forEach(element => {
+    element.addEventListener('click', addDieToRoll, true);
+    element.addEventListener('auxclick', removeDieFromRoll, true);
+  });
+
+  // Add roll button listeners
+  rollButton.addEventListener('click', executeCustomRoll, true);
+  customRollMenuButton.addEventListener('click', clearCustomRoll, true);
+
   if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
+}
+
+function clearCustomRoll() {
+  customRoll = {};
+}
+
+function addDieToRoll() {
+  const dieType = this.dataset.dice;
+  log.info(`add ${dieType} to roll`);
+  if (customRoll[dieType]) {
+    customRoll[dieType]++;
+  } else {
+    customRoll[dieType] = 1;
+  }
+}
+
+function removeDieFromRoll() {
+  const dieType = this.dataset.dice;
+  log.info(`remove ${this.dataset.dice} from roll`);
+  if (customRoll[dieType]) {
+    customRoll[dieType]--;
+  }
+}
+
+function executeCustomRoll(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  log.info('executing custom roll', customRoll);
+  rollCreate({ ...customRoll });
+  customRoll = {};
+
+  (document.querySelector('.dice-toolbar__dropdown-die') as HTMLElement).click();
 }
 
 function onPointerOver() {
@@ -123,7 +173,7 @@ function onPointerOut() {
   this.timeout = setTimeout(closeOverlay, FADE_TIMEOUT);
 }
 
-function clickHandler(e) {
+function rollFromCharacterSheet(e) {
   onPointerUp().bind(this)(e);
 }
 
@@ -177,11 +227,11 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
       overlayElement.style.display = 'none';
     }
 
-    rollCreate(dieCount, dieType, modifier, operator);
+    rollCreate({ [dieType]: dieCount }, modifier, operator);
   };
 }
 
-async function rollCreate(count: number, type: string, modifier: number, operator = {}) {
+async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
   const [apiKey, room, theme] = await Promise.all([
     getStorage('apiKey'),
     getStorage('room'),
@@ -189,12 +239,25 @@ async function rollCreate(count: number, type: string, modifier: number, operato
   ]);
 
   const dice = [];
-  for (let i = 0; i < count; i++) {
-    dice.push({
-      type,
-      theme,
-    });
-  }
+  Object.entries(roll).forEach(([type, count]) => {
+    for (let i = 0; i < count; i++) {
+      if (type === 'd100') {
+        dice.push({
+          type: 'd10x',
+          theme,
+        });
+        dice.push({
+          type: 'd10',
+          theme,
+        });
+      } else {
+        dice.push({
+          type,
+          theme,
+        });
+      }
+    }
+  });
 
   if (modifier) {
     dice.push({
