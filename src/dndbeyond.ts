@@ -40,6 +40,20 @@ function onPointerOver() {
   if (!overlayElement) {
     const text = (this as HTMLDivElement).textContent;
 
+    let dieCount = 0;
+    let dieType = 'd20';
+    if (/\d*d\d*/.test(text)) {
+      const [count, type] = text.split('d');
+      dieCount = Number(count);
+      dieType = `d${type.replace(/[+-].*/, '')}`;
+    }
+
+    const node = document.createElement('div');
+    node.id = overlayId;
+    node.className = 'fixed z-10 top-0 left-0 flex items-center justify-center text-sm rounded';
+    node.style.marginTop = `${top}px`;
+    node.style.marginLeft = `${right}px`;
+
     const img = document.createElement('img');
     img.src = imageLogo;
     img.className = 'h-auto w-auto';
@@ -50,30 +64,35 @@ function onPointerOver() {
     buttonRoll.className =
       'h-8 w-8 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-80';
     buttonRoll.dataset.text = text;
-
-    const buttonAdv = document.createElement('button');
-    buttonAdv.addEventListener('pointerup', onPointerUp(overlayId, { k: 'h1' }));
-    buttonAdv.className =
-      'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
-    buttonAdv.textContent = 'adv';
-    buttonAdv.dataset.text = text;
-
-    const buttonDis = document.createElement('button');
-    buttonDis.addEventListener('pointerup', onPointerUp(overlayId, { k: 'l1' }));
-    buttonDis.className =
-      'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
-    buttonDis.textContent = 'dis';
-    buttonDis.dataset.text = text;
-
-    const node = document.createElement('div');
-    node.id = overlayId;
-    node.className = 'fixed z-10 top-0 left-0 flex items-center justify-center text-sm rounded';
-    node.style.marginTop = `${top}px`;
-    node.style.marginLeft = `${right}px`;
-
     node.appendChild(buttonRoll);
-    node.appendChild(buttonAdv);
-    node.appendChild(buttonDis);
+
+    if (dieType === 'd20') {
+      const buttonAdv = document.createElement('button');
+      buttonAdv.addEventListener('pointerup', onPointerUp(overlayId, { k: 'h1' }));
+      buttonAdv.className =
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+      buttonAdv.textContent = 'adv';
+      buttonAdv.dataset.text = text;
+      node.appendChild(buttonAdv);
+
+      const buttonDis = document.createElement('button');
+      buttonDis.addEventListener('pointerup', onPointerUp(overlayId, { k: 'l1' }));
+      buttonDis.className =
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+      buttonDis.textContent = 'dis';
+      buttonDis.dataset.text = text;
+
+      node.appendChild(buttonDis);
+    } else {
+      const buttonCrit = document.createElement('button');
+      buttonCrit.addEventListener('pointerup', onPointerUp(overlayId, {}, true));
+      buttonCrit.className =
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+      buttonCrit.textContent = 'crit';
+      buttonCrit.dataset.text = text;
+      node.appendChild(buttonCrit);
+    }
+
     document.body.appendChild(node);
   } else {
     overlayElement.style.display = 'flex';
@@ -98,7 +117,7 @@ function onPointerOut() {
  * Pointer Up
  * Send roll event to dddice extension which will send to API
  */
-function onPointerUp(overlayId, operator = {}) {
+function onPointerUp(overlayId, operator = {}, isCritical = false) {
   return function (e) {
     if (e.button === 2) return;
 
@@ -114,6 +133,10 @@ function onPointerUp(overlayId, operator = {}) {
       const [count, type] = text.split('d');
       dieCount = Number(count);
       dieType = `d${type.replace(/[+-].*/, '')}`;
+    }
+
+    if (isCritical) {
+      dieCount *= 2;
     }
 
     if (/\+\d*/.test(text)) {
