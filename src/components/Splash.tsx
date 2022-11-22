@@ -63,7 +63,7 @@ const Splash = (props: ISplash) => {
             disabled={isLoading}
             name="apiKey"
             placeholder="Enter API Key"
-            type="text"
+            type="password"
           />
         </label>
       </form>
