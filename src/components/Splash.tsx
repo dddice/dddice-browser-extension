@@ -77,6 +77,7 @@ const Splash = (props: ISplash) => {
         <a
           className="text-neon-blue hover:text-neon-light-blue"
           href="https://dddice.com/account/developer"
+          target="_blank"
         >
           dddice API Key
         </a>{' '}

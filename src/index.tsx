@@ -4,9 +4,12 @@ import './index.css';
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import ReactTooltip from 'react-tooltip';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import Loading from './assets/loading.svg';
+import LogOut from './assets/interface-essential-exit-door-log-out-1.svg';
+import Help from './assets/support-help-question-question-square.svg';
 
 import API, { IStorage, DefaultStorage } from './api';
 import { getStorage, setStorage } from './storage';
@@ -66,6 +69,7 @@ const App = () => {
    * Connect to VTT
    */
   useEffect(() => {
+    ReactTooltip.rebuild();
     async function connect() {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -203,12 +207,28 @@ const App = () => {
    * Render
    */
   return (
-    <div className="p-4">
+    <div className="px-4 pt-2 pb-4">
+      {isConnected && (
+        <>
+          <ReactTooltip effect="solid" />
+          <div className="flex flex-row items-baseline justify-center">
+            <a
+              className="text-gray-700 text-xs mr-auto"
+              href="https://docs.dddice.com/guides/browser-extension.html"
+              target="_blank"
+            >
+              <Help className="flex h-4 w-4 m-auto" data-tip="Help" data-place="right" />
+            </a>
+            <button className="text-gray-700 text-xs ml-auto" onClick={onSignOut}>
+              <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
+            </button>
+          </div>
+        </>
+      )}
       <div className="flex flex-col items-center justify-center">
         <img src={imageLogo} alt="dddice" />
         <span className="text-white text-lg">dddice</span>
       </div>
-
       {error && (
         <div className="text-gray-700 mt-4">
           <p className="text-center text-neon-red">{error}</p>
@@ -220,7 +240,6 @@ const App = () => {
           </p>
         </div>
       )}
-
       {isConnected && !error && (
         <>
           {isLoading ? (
@@ -254,7 +273,6 @@ const App = () => {
           </span>
         </div>
       )}
-
       <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
         {isConnected && (
           <>
