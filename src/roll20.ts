@@ -1,13 +1,14 @@
 /** @format */
 
-import './dndbeyond.css';
-import './index.css';
 import API from './api';
 import createLogger from './log';
-import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
-import { getStorage } from './storage';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
+import { getStorage } from './storage';
+import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
+
 import imageLogo from 'url:./assets/dddice-48x48.png';
+import './dndbeyond.css';
+import './index.css';
 
 enum RollMessageType {
   not_a_roll,
@@ -17,7 +18,7 @@ enum RollMessageType {
   DnD5e,
 }
 
-const log = createLogger('roll20 extension');
+const log = createLogger('roll20');
 
 log.info('DDDICE ROLL20');
 
