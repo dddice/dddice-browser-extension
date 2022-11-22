@@ -1,16 +1,22 @@
 /** @format */
 
 import API from './api';
+import createLogger from './log';
 import { getStorage } from './storage';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice } from 'dddice-js';
 
 import './index.css';
 import './dndbeyond.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
-import { ThreeDDiceRollEvent, ThreeDDice, IRoll } from 'dddice-js';
+
+const log = createLogger('d&db');
+log.info('DDDICE D&D BEYOND');
 
 const RETRY_TIMEOUT = 100;
 const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
+
+const clickListeners = [];
 /**
  * Initialize listeners on all attacks
  */
@@ -20,15 +26,19 @@ function init() {
   if (diceElements.length === 0) return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
   diceElements.forEach(element => {
+    log.debug('add listeners');
     // Add listener to send roll to dddice
     element.addEventListener('pointerover', onPointerOver, true);
     element.addEventListener('pointerout', onPointerOut, true);
+    element.removeEventListener('click', clickHandler, true);
+    element.addEventListener('click', clickHandler, true);
   });
 
   if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
 }
 
 function onPointerOver() {
+  log.debug('onPointerOver');
   if (!this.id) {
     this.id = Date.now().toString(36);
   }
@@ -113,18 +123,23 @@ function onPointerOut() {
   this.timeout = setTimeout(closeOverlay, FADE_TIMEOUT);
 }
 
+function clickHandler(e) {
+  onPointerUp().bind(this)(e);
+}
+
 /**
  * Pointer Up
  * Send roll event to dddice extension which will send to API
  */
-function onPointerUp(overlayId, operator = {}, isCritical = false) {
+function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
   return function (e) {
+    log.debug('onPointerUp');
     if (e.button === 2) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const text = (this as HTMLDivElement).dataset.text;
+    const text = (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent;
     let modifier: number;
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
     let dieType = 'd20';
@@ -151,8 +166,16 @@ function onPointerUp(overlayId, operator = {}, isCritical = false) {
     }
 
     // close the overlay
-    const overlayElement = document.getElementById(overlayId);
-    overlayElement.style.display = 'none';
+    let overlayElement;
+    if (overlayId) {
+      overlayElement = document.getElementById(overlayId);
+    } else {
+      const overlayId = `ddd-${this.id}`;
+      overlayElement = document.getElementById(overlayId);
+    }
+    if (overlayElement) {
+      overlayElement.style.display = 'none';
+    }
 
     rollCreate(dieCount, dieType, modifier, operator);
   };

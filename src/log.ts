@@ -7,7 +7,7 @@
 
 import debug from 'debug';
 
-const NS = `dddice-foundry-module`;
+const NS = `dddice-browser-extension`;
 
 function createLogger(name: string, level: string) {
   return debug(`${NS}:${name}:${level}`);
