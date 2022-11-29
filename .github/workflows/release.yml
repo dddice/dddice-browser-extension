@@ -62,7 +62,58 @@ jobs:
           path: .
           key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
 
-  upload:
+  change-log:
+    name: Create Release with Change Log
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+
+      - name: Generate Changelog
+        id: git-cliff
+        uses: orhun/git-cliff-action@v1
+        with:
+          config: cliff.toml
+          args: --current --date-order --strip all
+        env:
+          OUTPUT: CHANGES.md
+
+      - name: Set the release body
+        id: release
+        shell: bash
+        run: |
+          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+          echo "RELEASE_BODY<<EOF" >>$GITHUB_OUTPUT
+          echo "$r" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          release_name: ${{ github.event.inputs.tag }}
+          body: ${{ steps.release.outputs.RELEASE_BODY }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dddice-browser-extension.zip
+          asset_name: dddice-browser-extension.zip
+          asset_content_type: application/zip
+
+  chrome:
     name: Upload to Chrome Web Store
     needs: release
     runs-on: ubuntu-latest
