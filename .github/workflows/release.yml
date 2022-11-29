@@ -25,6 +25,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all history for git-cliff
 
       - name: Update Version
         run: |
@@ -47,10 +49,12 @@ jobs:
           npm ci
           npm run build
 
-      - name: Zip Release
+      - name: Install zip
         uses: montudor/action-zip@v1
-        with:
-          args: zip -qq -r dddice-browser-extension.zip dist
+
+      - name: Zip output
+        run: zip -qq -r ../dddice-browser-extension.zip *
+        working-directory: dist
 
       - name: Cache Files
         uses: actions/cache@v3
@@ -69,7 +73,47 @@ jobs:
           path: .
           key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
 
-      - name: Publish
+      - name: Generate Changelog
+        id: git-cliff
+        uses: orhun/git-cliff-action@v1
+        with:
+          config: cliff.toml
+          args: --current --date-order --strip all
+        env:
+          OUTPUT: CHANGES.md
+
+      - name: Set the release body
+        id: release
+        shell: bash
+        run: |
+          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+          echo "RELEASE_BODY<<EOF" >>$GITHUB_OUTPUT
+          echo "$r" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          release_name: ${{ github.event.inputs.tag }}
+          body: ${{ steps.release.outputs.RELEASE_BODY }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dddice-browser-extension.zip
+          asset_name: dddice-browser-extension.zip
+          asset_content_type: application/zip
+
+      - name: Publish Chrome
         uses: levigo/github-action-chrome-webstore-publish@v1.0
         with:
           extensionId: ${{ secrets.CHROME_WEB_STORE_APP_ID }}
@@ -78,3 +122,11 @@ jobs:
           refreshToken: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
           inputFile: './dddice-browser-extension.zip'
           doPublish: true
+
+      - name: Publish Opera
+        env:
+          WEXT_SHIPIT_OPERA_EMAIL: ${{ secrets.OPERA_EMAIL }}
+          WEXT_SHIPIT_OPERA_EXTENSION_ID: ${{ secrets.OPERA_EXTENSION_ID }}
+          WEXT_SHIPIT_OPERA_PASSWORD: ${{ secrets.OPERA_PASSWORD }}
+        run: |
+          npx @wext/shipit opera dddice-browser-extension.zip
