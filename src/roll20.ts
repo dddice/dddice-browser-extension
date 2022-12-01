@@ -1,14 +1,21 @@
 /** @format */
 
-import API from './api';
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
 import { getStorage } from './storage';
-import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
+import {
+  IDiceRoll,
+  IRoll,
+  IRollValue,
+  ThreeDDice,
+  ThreeDDiceAPI,
+  ThreeDDiceRollEvent,
+} from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import './dndbeyond.css';
 import './index.css';
+import API from './api';
 
 enum RollMessageType {
   not_a_roll,
@@ -39,16 +46,14 @@ async function pickUpRolls() {
 }
 
 async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
-  const [apiKey, room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
-
-  const api = new API(apiKey);
+  const api: ThreeDDiceAPI = dddice.api;
 
   const operator = convertOperators(equation);
 
   if (dice.length > 0) {
     log.info('the die is cast', equation);
     try {
-      const roll: IRoll = await api.roll().create({ dice, room, operator, external_id });
+      const roll: IRoll = (await api.roll.create(dice, { operator, external_id })).data;
       node.setAttribute('data-dddice-roll-uuid', roll.uuid);
     } catch (e) {
       log.error(e);

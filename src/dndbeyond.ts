@@ -100,11 +100,9 @@ function onPointerOver() {
   if (!overlayElement) {
     const text = (this as HTMLDivElement).textContent;
 
-    let dieCount = 0;
     let dieType = 'd20';
     if (/\d*d\d*/.test(text)) {
-      const [count, type] = text.split('d');
-      dieCount = Number(count);
+      const [_, type] = text.split('d');
       dieType = `d${type.replace(/[+-].*/, '')}`;
     }
 
@@ -270,7 +268,7 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
   const api = new API(apiKey);
 
   await api.room().updateRolls(room, { is_cleared: true });
-  await api.roll().create({ dice, room, operator });
+  await dddice.api.roll.create(dice, { operator });
 }
 
 /**

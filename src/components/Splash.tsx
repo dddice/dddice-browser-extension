@@ -7,7 +7,7 @@
 import React, { useCallback, useState } from 'react';
 import classNames from 'classnames';
 
-import API, { IUser } from '../api';
+import { ThreeDDiceAPI, IUser } from 'dddice-js';
 
 interface ISplash {
   onSuccess(apiKey: string, user: IUser): any;
@@ -27,8 +27,8 @@ const Splash = (props: ISplash) => {
   const checkKeyValid = useCallback(async apiKey => {
     try {
       setIsLoading(true);
-      const api = new API(apiKey);
-      const user: IUser = await api.user().get();
+      const api = new ThreeDDiceAPI(apiKey);
+      const user: IUser = (await api.user.get()).data;
       onSuccess(apiKey, user);
       setIsLoading(false);
     } catch (error) {

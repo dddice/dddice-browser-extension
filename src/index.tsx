@@ -11,11 +11,23 @@ import Loading from './assets/loading.svg';
 import LogOut from './assets/interface-essential-exit-door-log-out-1.svg';
 import Help from './assets/support-help-question-question-square.svg';
 
-import API, { IStorage, DefaultStorage } from './api';
 import { getStorage, setStorage } from './storage';
 import Splash from './components/Splash';
 import Rooms from './components/Rooms';
 import Themes from './components/Themes';
+import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
+
+export interface IStorage {
+  apiKey?: string;
+  room?: string;
+  theme?: string;
+}
+
+export const DefaultStorage: IStorage = {
+  apiKey: undefined,
+  room: undefined,
+  theme: undefined,
+};
 
 const App = () => {
   /**
@@ -111,14 +123,14 @@ const App = () => {
 
   useEffect(() => {
     if (state.apiKey) {
-      api.current = new API(state.apiKey);
+      api.current = new ThreeDDiceAPI(state.apiKey);
 
       const load = async () => {
         setIsLoading(true);
 
         try {
           setLoadingMessage('Logging in');
-          await api.current.user().get();
+          await api.current.user.get();
         } catch (error) {
           setError('Problem connecting with dddice');
           return;
@@ -126,17 +138,17 @@ const App = () => {
 
         let themes = [];
         setLoadingMessage('Loading rooms list');
-        let rooms = await api.current.room().list();
+        let rooms: IRoom[] = (await api.current.room.list()).data;
         rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
 
         setLoadingMessage('Loading themes (1)');
-        let _themes = await api.current.diceBox().list();
+        let _themes: ITheme[] = await api.current.diceBox.list();
 
         const page = 2;
         while (_themes) {
           setLoadingMessage(`Loading themes (${page})`);
           themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
-          _themes = await api.current.diceBox().next();
+          _themes = await api.current.diceBox.next();
         }
 
         setRooms(rooms);
@@ -157,7 +169,7 @@ const App = () => {
   const onSearch = useCallback((value: string) => {
     async function search() {
       if (value) {
-        const themes = await api.current.diceBox().list(value);
+        const themes: ITheme[] = (await api.current.diceBox.list(value)).data;
         setThemes(themes);
       } else {
         setThemes([]);
