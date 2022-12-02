@@ -13,7 +13,7 @@ import Help from './assets/support-help-question-question-square.svg';
 
 import { getStorage, setStorage } from './storage';
 import ApiKeyEntry from './components/ApiKeyEntry';
-import Rooms from './components/Rooms';
+import RoomSelection from './components/RoomSelection';
 import Themes from './components/Themes';
 import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
 import Splash from './components/Splash';
@@ -134,7 +134,7 @@ const App = () => {
     let themes = [];
     setIsThemesLoading(true);
     setLoadingMessage('Loading themes (1)');
-    let _themes = (await api.current.diceBox.list()).data;
+    let _themes = await api.current.diceBox.list();
 
     const page = 2;
     while (_themes) {
@@ -142,7 +142,7 @@ const App = () => {
       themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
       _themes = await api.current.diceBox.next();
     }
-    setStorage({ themes });
+    //setStorage({ themes });
     setThemes(themes);
     setIsThemesLoading(false);
   };
@@ -179,7 +179,7 @@ const App = () => {
           refreshRooms();
         }
 
-        if (state.themes) {
+        if (state.themes && state.themes.length > 0) {
           setThemes(state.themes);
         } else {
           await refreshThemes();
@@ -296,18 +296,24 @@ const App = () => {
           ) : (
             <>
               {!state.apiKey ? (
-                <Splash />
-              ) : (
-                rooms.length > 0 && <Room rooms={rooms} />
-                /*<>
-                  <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
+                <ApiKeyEntry onSuccess={onKeySuccess} />
+              ) : state.room ? (
+                <>
+                  <Room
+                    room={rooms.find(room => room.slug === state.room)}
+                    onSwitchRoom={() => {
+                      onChangeRoom(undefined);
+                    }}
+                  />
                   <Themes
                     selected={state.theme}
                     onChange={onChangeTheme}
                     onSearch={onSearch}
                     themes={themes}
                   />
-                </>*/
+                </>
+              ) : (
+                <RoomSelection rooms={rooms} onSelectRoom={onChangeRoom} />
               )}
             </>
           )}

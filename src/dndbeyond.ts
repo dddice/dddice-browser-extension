@@ -17,6 +17,9 @@ const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
 
 let customRoll: Record<string, number> = {};
+
+const DEFAULT_THEME = 'dddice-standard';
+
 /**
  * Initialize listeners on all attacks
  */
@@ -230,11 +233,13 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 }
 
 async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
-  const [apiKey, room, theme] = await Promise.all([
+  let [apiKey, room, theme] = await Promise.all([
     getStorage('apiKey'),
     getStorage('room'),
     getStorage('theme'),
   ]);
+
+  theme = theme && theme != '' ? theme : DEFAULT_THEME;
 
   const dice = [];
   Object.entries(roll).forEach(([type, count]) => {

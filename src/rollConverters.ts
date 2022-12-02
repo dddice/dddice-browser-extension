@@ -5,6 +5,8 @@ import { Parser } from '@dice-roller/rpg-dice-roller';
 import createLogger from './log';
 const log = createLogger('roll converter');
 
+const DEFAULT_THEME = 'dddice-standard';
+
 function convertD100toD10x(theme, value) {
   return [
     {
@@ -18,7 +20,8 @@ function convertD100toD10x(theme, value) {
 }
 
 export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
-  const theme = await getStorage('theme');
+  let theme = await getStorage('theme');
+  theme = theme && theme != '' ? theme : DEFAULT_THEME;
   const dice = [];
   roll20Roll.querySelectorAll('.diceroll').forEach(die => {
     let type = null;
