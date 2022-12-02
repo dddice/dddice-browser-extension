@@ -12,10 +12,12 @@ import LogOut from './assets/interface-essential-exit-door-log-out-1.svg';
 import Help from './assets/support-help-question-question-square.svg';
 
 import { getStorage, setStorage } from './storage';
-import Splash from './components/Splash';
+import ApiKeyEntry from './components/ApiKeyEntry';
 import Rooms from './components/Rooms';
 import Themes from './components/Themes';
 import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
+import Splash from './components/Splash';
+import Room from './components/Room';
 
 export interface IStorage {
   apiKey?: string;
@@ -77,11 +79,14 @@ const App = () => {
   const [themes, setThemes] = useState([]);
   const currentTheme = useRef(state.theme); // for instant access to themes
 
+  const [isThemesLoading, setIsThemesLoading] = useState(false);
+
+  const [isRoomsLoading, setIsRoomsLoading] = useState(false);
+
   /**
    * Connect to VTT
    */
   useEffect(() => {
-    ReactTooltip.rebuild();
     async function connect() {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -99,10 +104,12 @@ const App = () => {
 
   useEffect(() => {
     async function initStorage() {
-      const [apiKey, room, theme] = await Promise.all([
+      const [apiKey, room, theme, rooms, themes] = await Promise.all([
         getStorage('apiKey'),
         getStorage('room'),
         getStorage('theme'),
+        getStorage('rooms'),
+        getStorage('themes'),
       ]);
 
       currentRoom.current = room;
@@ -113,6 +120,8 @@ const App = () => {
         apiKey,
         room,
         theme,
+        rooms,
+        themes,
       }));
     }
 
@@ -120,6 +129,32 @@ const App = () => {
       initStorage();
     }
   }, [isConnected]);
+
+  const refreshThemes = async () => {
+    let themes = [];
+    setIsThemesLoading(true);
+    setLoadingMessage('Loading themes (1)');
+    let _themes = (await api.current.diceBox.list()).data;
+
+    const page = 2;
+    while (_themes) {
+      setLoadingMessage(`Loading themes (${page})`);
+      themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
+      _themes = await api.current.diceBox.next();
+    }
+    setStorage({ themes });
+    setThemes(themes);
+    setIsThemesLoading(false);
+  };
+
+  const refreshRooms = async () => {
+    setIsRoomsLoading(true);
+    let rooms = (await api.current.room.list()).data;
+    rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
+    setStorage({ rooms });
+    setRooms(rooms);
+    setIsRoomsLoading(false);
+  };
 
   useEffect(() => {
     if (state.apiKey) {
@@ -136,29 +171,28 @@ const App = () => {
           return;
         }
 
-        let themes = [];
         setLoadingMessage('Loading rooms list');
-        let rooms: IRoom[] = (await api.current.room.list()).data;
-        rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
 
-        setLoadingMessage('Loading themes (1)');
-        let _themes: ITheme[] = await api.current.diceBox.list();
-
-        const page = 2;
-        while (_themes) {
-          setLoadingMessage(`Loading themes (${page})`);
-          themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
-          _themes = await api.current.diceBox.next();
+        if (state.rooms) {
+          setRooms(state.rooms);
+        } else {
+          refreshRooms();
         }
 
-        setRooms(rooms);
-        setThemes(themes);
+        if (state.themes) {
+          setThemes(state.themes);
+        } else {
+          await refreshThemes();
+        }
+
         setIsLoading(false);
       };
 
       load();
     }
   }, [state.apiKey]);
+
+  useEffect(() => ReactTooltip.rebuild());
 
   const reloadDiceEngine = async apiKey => {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -262,9 +296,10 @@ const App = () => {
           ) : (
             <>
               {!state.apiKey ? (
-                <Splash onSuccess={onKeySuccess} />
+                <Splash />
               ) : (
-                <>
+                rooms.length > 0 && <Room rooms={rooms} />
+                /*<>
                   <Rooms selected={state.room} onChange={onChangeRoom} rooms={rooms} />
                   <Themes
                     selected={state.theme}
@@ -272,7 +307,7 @@ const App = () => {
                     onSearch={onSearch}
                     themes={themes}
                   />
-                </>
+                </>*/
               )}
             </>
           )}
