@@ -3,7 +3,7 @@
 import API from './api';
 import createLogger from './log';
 import { getStorage } from './storage';
-import { IRoll, ThreeDDiceRollEvent, ThreeDDice } from 'dddice-js';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ThreeDDiceAPI } from 'dddice-js';
 
 import './index.css';
 import './dndbeyond.css';
@@ -270,9 +270,9 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
     });
   }
 
-  const api = new API(apiKey);
+  const api = new ThreeDDiceAPI(apiKey);
 
-  await api.room().updateRolls(room, { is_cleared: true });
+  await api.room.updateRolls(room, { is_cleared: true });
   await dddice.api.roll.create(dice, { operator });
 }
 

@@ -41,8 +41,8 @@ function init() {
 
 async function pickUpRolls() {
   const [apiKey, room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
-  const api = new API(apiKey);
-  await api.room().updateRolls(room, { is_cleared: true });
+  const api = new ThreeDDiceAPI(apiKey);
+  await api.room.updateRolls(room, { is_cleared: true });
 }
 
 async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {

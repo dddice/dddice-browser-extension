@@ -24,11 +24,10 @@ const RoomCard = (props: IRoomCardProps) => {
         {room.participants.map(participant => (
           <span
             className="relative transform hover:scale-105 transition-all duration-200 mr-1 mb-1"
-            key={participant.username}
+            key={participant.id}
             data-tip={participant.username}
           >
             <span
-              key={participant.id}
               data-tip={participant.username}
               className="text-white relative z-10 hover:z-20 rounded-full border-2 flex items-center justify-center font-bold bg-gray-800 cursor-pointer w-8 h-8 lg:w-10 lg:h-10 text-xs lg:text-md"
               currentitem="false"
