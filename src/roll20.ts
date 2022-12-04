@@ -186,8 +186,8 @@ function watchForRollToMake(mutations: MutationRecord[]) {
           if (rollMessageType && !node.classList.contains('dddiceRoll')) {
             log.info('found a roll', node);
             node.classList.add('hidden');
-            addLoadingMessage();
             await pickUpRolls();
+            addLoadingMessage();
             external_id = node.getAttribute('data-messageid');
 
             if (node.classList.contains('you')) {
@@ -223,6 +223,13 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                   break;
                 }
               }
+            } else {
+              // set a timer and unhide the message after a bit,
+              // as a kludge for players not using the plugin
+              setTimeout(() => {
+                node.classList.remove('hidden');
+                removeLoadingMessage();
+              }, 3000);
             }
           }
         });
