@@ -21,7 +21,7 @@ function convertD100toD10x(theme, value) {
 
 export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
   let theme = await getStorage('theme');
-  theme = theme && theme != '' ? theme : DEFAULT_THEME;
+  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
   const dice = [];
   roll20Roll.querySelectorAll('.diceroll').forEach(die => {
     let type = null;
@@ -59,9 +59,10 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
 }
 
 export async function convertInlineRollToDddiceRoll(equation, result) {
-  const theme = await getStorage('theme');
-  const dice = [];
+  let theme = await getStorage('theme');
+  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
 
+  const dice = [];
   const parsedEquation = Parser.parse(equation);
   const roll20Roll = document.createElement('div');
   roll20Roll.innerHTML = result;

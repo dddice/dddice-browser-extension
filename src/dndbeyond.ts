@@ -1,9 +1,8 @@
 /** @format */
 
-import API from './api';
 import createLogger from './log';
 import { getStorage } from './storage';
-import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ThreeDDiceAPI } from 'dddice-js';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice } from 'dddice-js';
 
 import './index.css';
 import './dndbeyond.css';
@@ -233,13 +232,9 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 }
 
 async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
-  const [apiKey, room, _theme] = await Promise.all([
-    getStorage('apiKey'),
-    getStorage('room'),
-    getStorage('theme'),
-  ]);
+  const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
 
-  const theme = _theme && _theme != '' ? _theme : DEFAULT_THEME;
+  const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
 
   const dice = [];
   Object.entries(roll).forEach(([type, count]) => {
@@ -270,9 +265,7 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
     });
   }
 
-  const api = new ThreeDDiceAPI(apiKey);
-
-  await api.room.updateRolls(room, { is_cleared: true });
+  await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
   await dddice.api.roll.create(dice, { operator });
 }
 
@@ -449,7 +442,7 @@ function initializeSDK() {
       dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
       dddice.start();
       if (room) {
-        dddice.connect(room);
+        dddice.connect(room.slug);
       }
     }
   });

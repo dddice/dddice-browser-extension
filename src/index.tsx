@@ -14,16 +14,16 @@ import imageLogo from 'url:./assets/dddice-48x48.png';
 
 import ApiKeyEntry from './components/ApiKeyEntry';
 import RoomSelection from './components/RoomSelection';
-import Themes from './components/Themes';
 import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
-import Splash from './components/Splash';
 import Room from './components/Room';
 import { getStorage, setStorage } from './storage';
+import ThemeSelection from './components/ThemeSelection';
+import Theme from './components/Theme';
 
 export interface IStorage {
   apiKey?: string;
-  room?: string;
-  theme?: string;
+  room?: IRoom;
+  theme?: ITheme;
   themes?: ITheme[];
   rooms?: IRoom[];
 }
@@ -40,7 +40,7 @@ const App = () => {
   /**
    * API
    */
-  const api = useRef();
+  const api = useRef(ThreeDDiceAPI);
 
   /**
    * Storage Object
@@ -50,7 +50,11 @@ const App = () => {
   /**
    * Loading
    */
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(0);
+
+  const pushLoading = () => setIsLoading(isLoading => isLoading + 1);
+  const popLoading = () => setIsLoading(isLoading => Math.max(isLoading - 1, 0));
+  const clearLoading = () => setIsLoading(0);
 
   /**
    * Loading
@@ -71,22 +75,6 @@ const App = () => {
    * Current VTT
    */
   const [vtt, setVTT] = useState(undefined);
-
-  /**
-   * Rooms
-   */
-  const [rooms, setRooms] = useState([]);
-  const currentRoom = useRef(state.room); // for instant access to rooms
-
-  /**
-   * Themes
-   */
-  const [themes, setThemes] = useState([]);
-  const currentTheme = useRef(state.theme); // for instant access to themes
-
-  const [isThemesLoading, setIsThemesLoading] = useState(false);
-
-  const [isRoomsLoading, setIsRoomsLoading] = useState(false);
 
   const [isEnterApiKey, setIsEnterApiKey] = useState(false);
 
@@ -119,9 +107,6 @@ const App = () => {
         getStorage('themes'),
       ]);
 
-      currentRoom.current = room;
-      currentTheme.current = theme;
-
       setState((storage: IStorage) => ({
         ...storage,
         apiKey,
@@ -139,31 +124,45 @@ const App = () => {
 
   const refreshThemes = async () => {
     let themes = [];
-    setIsThemesLoading(true);
+    pushLoading();
     setLoadingMessage('Loading themes (1)');
     let _themes = (await api.current.diceBox.list()).data;
 
     const page = 2;
     while (_themes) {
       setLoadingMessage(`Loading themes (${page})`);
-      themes = [...themes, ..._themes].sort((a, b) => a.name.localeCompare(b.name));
+      themes = [...themes, ..._themes];
       _themes = (await api.current.diceBox.next())?.data;
     }
     setStorage({
-      themes: themes.map(theme => ({ name: theme.name, id: theme.id, slug: theme.slug })),
+      themes: themes.map(theme => ({
+        name: theme.name,
+        id: theme.id,
+        slug: theme.slug,
+        preview: theme.preview,
+        label: theme.label,
+      })),
     });
-    setThemes(themes);
-    setIsThemesLoading(false);
+    setState(state => ({
+      ...state,
+      themes: themes.map(theme => ({
+        name: theme.name,
+        id: theme.id,
+        slug: theme.slug,
+        preview: theme.preview,
+        label: theme.label,
+      })),
+    }));
+    popLoading();
   };
 
   const refreshRooms = async () => {
     setLoadingMessage('Loading rooms list');
-    setIsRoomsLoading(true);
+    pushLoading();
     let rooms = (await api.current.room.list()).data;
-    rooms = rooms.sort((a, b) => a.name.localeCompare(b.name));
     setStorage({ rooms });
-    setRooms(rooms);
-    setIsRoomsLoading(false);
+    setState(state => ({ ...state, rooms }));
+    popLoading();
   };
 
   useEffect(() => {
@@ -171,24 +170,20 @@ const App = () => {
       api.current = new ThreeDDiceAPI(state.apiKey);
 
       const load = async () => {
-        setIsLoading(true);
+        pushLoading();
 
         try {
-          if (state.rooms) {
-            setRooms(state.rooms);
-          } else {
+          if (!state.rooms) {
             await refreshRooms();
           }
 
-          if (state.themes && state.themes.length > 0) {
-            setThemes(state.themes);
-          } else {
+          if (!state.themes) {
             await refreshThemes();
           }
-
-          setIsLoading(false);
+          popLoading();
         } catch (error) {
           setError('Problem connecting with dddice');
+          clearLoading();
           return;
         }
       };
@@ -205,25 +200,35 @@ const App = () => {
     });
   };
 
-  const onChangeRoom = useCallback(
-    async (room: string) => {
-      // if room isn't in rooms list, assume it needs to be joined
-      if (room && !rooms.find(r => r.slug === room)) {
+  const onJoinRoom = useCallback(async (roomSlug: string) => {
+    if (roomSlug) {
+      await createGuestAccountIfNeeded();
+      const room = state.rooms && state.rooms.find(r => r.slug === roomSlug);
+      if (room) {
+        onChangeRoom(room);
+      } else {
         let newRoom;
         try {
-          newRoom = (await api.current.room.join(room)).data;
+          newRoom = (await api.current.room.join(roomSlug)).data;
         } catch (error) {
           setError('could not join room');
+          throw error;
         }
         if (newRoom) {
-          setRooms(rooms => (rooms ? [...rooms, newRoom] : [newRoom]));
-          await setStorage({ rooms: rooms ? [...rooms, newRoom] : [newRoom] });
+          await setStorage({ rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom] });
           setState((storage: IStorage) => ({
             ...storage,
             rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
           }));
+          await onChangeRoom(newRoom);
         }
       }
+    }
+  }, []);
+
+  const onChangeRoom = useCallback(
+    async (room: IRoom) => {
+      // if room isn't in rooms list, assume it needs to be joined
 
       setState((storage: IStorage) => ({
         ...storage,
@@ -232,25 +237,23 @@ const App = () => {
       await setStorage({ room });
       await reloadDiceEngine();
     },
-    [rooms],
+    [state.rooms],
   );
 
   const onCreateRoom = useCallback(async () => {
-    let apiKey;
-    if (!state.apiKey || !api.current) {
-      apiKey = (await new ThreeDDiceAPI().user.create()).data;
-      api.current = new ThreeDDiceAPI(apiKey);
-    }
+    setLoadingMessage('Creating Room');
+    pushLoading();
+    await createGuestAccountIfNeeded();
     let newRoom;
     try {
       newRoom = (await api.current.room.create()).data;
     } catch (error) {
       setError('could not create room');
+      clearLoading();
       throw error;
     }
     if (newRoom) {
-      setRooms(rooms => (rooms ? [...rooms, newRoom] : [newRoom]));
-      await setStorage({ rooms: rooms ? [...rooms, newRoom] : [newRoom] });
+      await setStorage({ rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom] });
       setState((storage: IStorage) => ({
         ...storage,
         rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
@@ -259,20 +262,14 @@ const App = () => {
 
     setState((storage: IStorage) => ({
       ...storage,
-      room: newRoom.slug,
+      room: newRoom,
     }));
-    await setStorage({ room: newRoom.slug });
-    if (apiKey) {
-      setState((storage: IStorage) => ({
-        ...storage,
-        apiKey,
-      }));
-      setStorage({ apiKey });
-    }
+    await setStorage({ room: newRoom });
+    popLoading();
     await reloadDiceEngine();
-  }, [rooms]);
+  }, [state.rooms]);
 
-  const onChangeTheme = useCallback((theme: string) => {
+  const onChangeTheme = useCallback((theme: ITheme) => {
     setState((storage: IStorage) => ({
       ...storage,
       theme,
@@ -300,43 +297,42 @@ const App = () => {
     setStorage({ rooms: '' });
     setStorage({ themes: '' });
     setError(undefined);
-    setIsLoading(false);
+    clearLoading();
   }, []);
 
   const onSwitchRoom = useCallback(async () => {
-    setIsLoading(true);
     await refreshRooms();
     onChangeRoom(undefined);
-    setIsLoading(false);
   }, []);
 
-  const onSearch = useCallback((value: string) => {
-    async function search() {
-      if (value) {
-        const themes: ITheme[] = (await api.current.diceBox.list(value)).data;
-        setThemes(themes);
-      } else {
-        setThemes([]);
+  const onSwitchTheme = useCallback(async () => {
+    await refreshThemes();
+    onChangeTheme(undefined);
+  }, []);
+
+  const createGuestAccountIfNeeded = useCallback(async () => {
+    if (!state.apiKey || !api.current) {
+      try {
+        const apiKey = (await new ThreeDDiceAPI().user.guest()).data;
+        api.current = new ThreeDDiceAPI(apiKey);
+        setState((storage: IStorage) => ({
+          ...storage,
+          apiKey,
+        }));
+        await setStorage({ apiKey });
+      } catch (error) {
+        setError('could not create room');
+        clearLoading();
+        throw error;
       }
     }
-
-    search();
   }, []);
-
-  const createGuestAccount = useCallback(async () => {
-    setError(undefined);
-    try {
-      onKeySuccess((await new ThreeDDiceAPI().user.create()).data);
-    } catch {
-      setError('Unable to connect');
-    }
-  }, [onKeySuccess]);
 
   /**
    * Render
    */
   return (
-    <div className="px-4 pt-2 pb-4">
+    <div className="px-4 pt-2 pb-4 scroll">
       {isConnected && (
         <>
           <ReactTooltip effect="solid" />
@@ -386,25 +382,25 @@ const App = () => {
               <>
                 {!state.apiKey || !state.room ? (
                   <RoomSelection
-                    rooms={rooms}
+                    rooms={state.rooms}
                     onSelectRoom={onChangeRoom}
-                    onJoinRoom={onChangeRoom}
+                    onJoinRoom={onJoinRoom}
                     onError={setError}
                     onConnectAccount={() => setIsEnterApiKey(true)}
                     onCreateRoom={onCreateRoom}
+                    onRefreshRooms={refreshRooms}
+                  />
+                ) : !state.theme ? (
+                  <ThemeSelection
+                    themes={state.themes}
+                    onSelectTheme={onChangeTheme}
+                    onConnectAccount={() => undefined}
+                    onRefreshThemes={refreshThemes}
                   />
                 ) : (
                   <>
-                    <Room
-                      room={rooms.find(room => room.slug === state.room)}
-                      onSwitchRoom={onSwitchRoom}
-                    />
-                    <Themes
-                      selected={state.theme}
-                      onChange={onChangeTheme}
-                      onSearch={onSearch}
-                      themes={themes}
-                    />
+                    <Room room={state.room} onSwitchRoom={onSwitchRoom} />
+                    <Theme theme={state.theme} onSwitchTheme={onSwitchTheme} />
                   </>
                 )}
               </>

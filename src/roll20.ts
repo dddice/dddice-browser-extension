@@ -3,19 +3,11 @@
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
 import { getStorage } from './storage';
-import {
-  IDiceRoll,
-  IRoll,
-  IRollValue,
-  ThreeDDice,
-  ThreeDDiceAPI,
-  ThreeDDiceRollEvent,
-} from 'dddice-js';
+import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import './dndbeyond.css';
 import './index.css';
-import API from './api';
 
 enum RollMessageType {
   not_a_roll,
@@ -40,20 +32,17 @@ function init() {
 }
 
 async function pickUpRolls() {
-  const [apiKey, room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
-  const api = new ThreeDDiceAPI(apiKey);
-  await api.room.updateRolls(room, { is_cleared: true });
+  const [room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
+  await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
 }
 
 async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
-  const api: ThreeDDiceAPI = dddice.api;
-
   const operator = convertOperators(equation);
 
   if (dice.length > 0) {
     log.info('the die is cast', equation);
     try {
-      const roll: IRoll = (await api.roll.create(dice, { operator, external_id })).data;
+      const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
       node.setAttribute('data-dddice-roll-uuid', roll.uuid);
     } catch (e) {
       log.error(e);
@@ -268,7 +257,7 @@ function initializeSDK() {
       dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
       dddice.start();
       if (room) {
-        dddice.connect(room);
+        dddice.connect(room.slug);
       }
     }
   });

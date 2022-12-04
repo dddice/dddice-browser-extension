@@ -5,28 +5,33 @@
  */
 
 import React from 'react';
-
 import { IRoom } from 'dddice-js';
+
+import Refresh from '../assets/arrows-diagrams-arrow-rotate-1.svg';
+
 import DddiceButton from './DddiceButton';
-import classNames from 'classnames';
 import RoomCard from './RoomCard';
 
 interface IRooms {
   rooms: IRoom[];
-
-  onSelectRoom(room: string): void;
-
+  onSelectRoom(room: IRoom): void;
   onJoinRoom(room: string): void;
-
   onError(message: string): void;
-
   onConnectAccount(): void;
-
   onCreateRoom(): void;
+  onRefreshRooms(): void;
 }
 
 const RoomSelection = (props: IRooms) => {
-  const { rooms, onSelectRoom, onJoinRoom, onError, onConnectAccount, onCreateRoom } = props;
+  const {
+    rooms,
+    onSelectRoom,
+    onJoinRoom,
+    onError,
+    onConnectAccount,
+    onCreateRoom,
+    onRefreshRooms,
+  } = props;
 
   const onChangeLink = event => {
     event.preventDefault();
@@ -48,10 +53,16 @@ const RoomSelection = (props: IRooms) => {
     <div className="text-white flex flex-col">
       {rooms?.length > 0 ? (
         <>
-          <div className="flex text-xl my-auto justify-center mt-3">Join A Room</div>
-          <div className="overflow-y-auto scroll">
+          <div className="mt-3 flex">
+            <div className="flex mr-auto">{''}</div>
+            <div className="flex flex-row text-xl my-auto justify-center">Join A Room</div>
+            <button onClick={onRefreshRooms} className="ml-auto">
+              <Refresh data-tip="reload room list" className="flex h-4 w-4" />
+            </button>
+          </div>
+          <div className="overflow-y-auto">
             {rooms.map((room: IRoom) => (
-              <RoomCard room={room} onClick={() => onSelectRoom(room.slug)} key={room.slug} />
+              <RoomCard room={room} onClick={() => onSelectRoom(room)} key={room.slug} />
             ))}
           </div>
         </>

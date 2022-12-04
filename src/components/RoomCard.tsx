@@ -4,7 +4,9 @@ import { IRoom } from 'dddice-js';
 
 interface IRoomCardProps {
   room: IRoom;
+
   onClick();
+
   key: string;
 }
 
@@ -18,7 +20,9 @@ const RoomCard = (props: IRoomCardProps) => {
       onClick={() => onClick()}
     >
       <div className="flex flex-row">
-        <div className="flex text-white rounded bg-gray-800 bg-opacity-50 px-1">{room.name}</div>
+        <div className="flex text-white rounded bg-gray-800 bg-opacity-50 px-1 text-lg font-bold">
+          {room.name}
+        </div>
       </div>
       <div className="ml-6 mt-1 flex flex-row-reverse flex-wrap">
         {room.participants.map(participant => (
