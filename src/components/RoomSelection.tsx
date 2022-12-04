@@ -21,10 +21,12 @@ interface IRooms {
   onError(message: string): void;
 
   onConnectAccount(): void;
+
+  onCreateRoom(): void;
 }
 
 const RoomSelection = (props: IRooms) => {
-  const { rooms, onSelectRoom, onJoinRoom, onError, onConnectAccount } = props;
+  const { rooms, onSelectRoom, onJoinRoom, onError, onConnectAccount, onCreateRoom } = props;
 
   const onChangeLink = event => {
     event.preventDefault();
@@ -43,7 +45,7 @@ const RoomSelection = (props: IRooms) => {
    * Render
    */
   return (
-    <div className="text-white">
+    <div className="text-white flex flex-col">
       {rooms?.length > 0 ? (
         <>
           <div className="flex text-xl my-auto justify-center mt-3">Join A Room</div>
@@ -52,18 +54,18 @@ const RoomSelection = (props: IRooms) => {
               <RoomCard room={room} onClick={() => onSelectRoom(room.slug)} key={room.slug} />
             ))}
           </div>
-          <div className="flex flex-row items-center text-gray-300">
-            <div className="flex-grow border-t border-gray-700" />
-            <div className="pt-0 p-1">or</div>
-            <div className="flex-grow border-t border-gray-700" />
-          </div>
         </>
       ) : (
-        <div className="flex text-xl my-auto justify-center mt-3">Join A Room</div>
+        <DddiceButton onClick={onCreateRoom}>Create A Room</DddiceButton>
       )}
+      <div className="flex flex-row items-center text-gray-300">
+        <div className="flex-grow border-t border-gray-700" />
+        <div className="pt-0 p-1">or</div>
+        <div className="flex-grow border-t border-gray-700" />
+      </div>
       <form onSubmit={onChangeLink}>
         <label className="text-gray-300 m-2 flex flex-row justify-center">
-          <div className="mr-2">Via Link</div>
+          <div className="mr-2">Join Via Link</div>
           <input name="link" className="bg-gray-800 rounded text-gray-100" />
         </label>
       </form>

@@ -233,13 +233,13 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 }
 
 async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
-  let [apiKey, room, theme] = await Promise.all([
+  const [apiKey, room, _theme] = await Promise.all([
     getStorage('apiKey'),
     getStorage('room'),
     getStorage('theme'),
   ]);
 
-  theme = theme && theme != '' ? theme : DEFAULT_THEME;
+  const theme = _theme && _theme != '' ? _theme : DEFAULT_THEME;
 
   const dice = [];
   Object.entries(roll).forEach(([type, count]) => {

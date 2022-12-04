@@ -384,13 +384,16 @@ const App = () => {
               </div>
             ) : (
               <>
-                {!state.apiKey ? (
-                  <Splash
-                    onJoinRoom={createGuestAccount}
+                {!state.apiKey || !state.room ? (
+                  <RoomSelection
+                    rooms={rooms}
+                    onSelectRoom={onChangeRoom}
+                    onJoinRoom={onChangeRoom}
+                    onError={setError}
                     onConnectAccount={() => setIsEnterApiKey(true)}
                     onCreateRoom={onCreateRoom}
                   />
-                ) : state.room ? (
+                ) : (
                   <>
                     <Room
                       room={rooms.find(room => room.slug === state.room)}
@@ -403,14 +406,6 @@ const App = () => {
                       themes={themes}
                     />
                   </>
-                ) : (
-                  <RoomSelection
-                    rooms={rooms}
-                    onSelectRoom={onChangeRoom}
-                    onJoinRoom={onChangeRoom}
-                    onError={setError}
-                    onConnectAccount={() => setIsEnterApiKey(true)}
-                  />
                 )}
               </>
             )}
