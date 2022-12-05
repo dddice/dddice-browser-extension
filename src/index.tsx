@@ -301,12 +301,10 @@ const App = () => {
   }, []);
 
   const onSwitchRoom = useCallback(async () => {
-    await refreshRooms();
     onChangeRoom(undefined);
   }, []);
 
   const onSwitchTheme = useCallback(async () => {
-    await refreshThemes();
     onChangeTheme(undefined);
   }, []);
 
