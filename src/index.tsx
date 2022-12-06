@@ -123,7 +123,7 @@ const App = () => {
   }, [isConnected]);
 
   const refreshThemes = async () => {
-    let themes = [];
+    let themes: ITheme[] = [];
     pushLoading();
     setLoadingMessage('Loading themes (1)');
     let _themes = (await api.current.diceBox.list()).data;
@@ -135,23 +135,11 @@ const App = () => {
       _themes = (await api.current.diceBox.next())?.data;
     }
     setStorage({
-      themes: themes.map(theme => ({
-        name: theme.name,
-        id: theme.id,
-        slug: theme.slug,
-        preview: theme.preview,
-        label: theme.label,
-      })),
+      themes,
     });
     setState(state => ({
       ...state,
-      themes: themes.map(theme => ({
-        name: theme.name,
-        id: theme.id,
-        slug: theme.slug,
-        preview: theme.preview,
-        label: theme.label,
-      })),
+      themes,
     }));
     popLoading();
   };
@@ -197,6 +185,12 @@ const App = () => {
   const reloadDiceEngine = async () => {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'reloadDiceEngine' });
+    });
+  };
+
+  const preloadTheme = async (theme: ITheme) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'preloadTheme', theme });
     });
   };
 
@@ -275,6 +269,9 @@ const App = () => {
       theme,
     }));
     setStorage({ theme });
+    if (theme) {
+      preloadTheme(theme);
+    }
   }, []);
 
   const onKeySuccess = useCallback((apiKey: string) => {

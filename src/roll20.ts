@@ -3,7 +3,7 @@
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
 import { getStorage } from './storage';
-import { IDiceRoll, IRoll, IRollValue, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
+import { IDiceRoll, IRoll, IRollValue, ITheme, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import './dndbeyond.css';
@@ -250,17 +250,28 @@ function updateChat(roll: IRoll) {
   }
 }
 
+function preloadTheme(theme: ITheme) {
+  log.debug('Load theme', theme);
+  dddice.loadTheme(theme, true);
+  dddice.loadThemeResources(theme.id, true);
+}
+
 function initializeSDK() {
-  Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
-    if (apiKey) {
-      dddice = new ThreeDDice(canvasElement, apiKey);
-      dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-      dddice.start();
-      if (room) {
-        dddice.connect(room.slug);
+  Promise.all([getStorage('apiKey'), getStorage('room'), getStorage('theme')]).then(
+    ([apiKey, room, theme]) => {
+      if (apiKey) {
+        dddice = new ThreeDDice(canvasElement, apiKey);
+        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+        dddice.start();
+        if (room) {
+          dddice.connect(room.slug);
+        }
+        if (theme) {
+          preloadTheme(theme);
+        }
       }
-    }
-  });
+    },
+  );
 }
 
 // add canvas element to document
@@ -289,6 +300,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
+    case 'preloadTheme':
+      preloadTheme(message.theme);
   }
 });
 

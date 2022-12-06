@@ -2,7 +2,7 @@
 
 import createLogger from './log';
 import { getStorage } from './storage';
-import { IRoll, ThreeDDiceRollEvent, ThreeDDice } from 'dddice-js';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme } from 'dddice-js';
 
 import './index.css';
 import './dndbeyond.css';
@@ -435,17 +435,27 @@ function updateChat(roll: IRoll) {
   notificationControls.insertAdjacentElement('beforebegin', generateChatMessage(roll));
 }
 
+function preloadTheme(theme: ITheme) {
+  dddice.loadTheme(theme, true);
+  dddice.loadThemeResources(theme.id, true);
+}
+
 function initializeSDK() {
-  Promise.all([getStorage('apiKey'), getStorage('room')]).then(([apiKey, room]) => {
-    if (apiKey) {
-      dddice = new ThreeDDice(canvasElement, apiKey);
-      dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-      dddice.start();
-      if (room) {
-        dddice.connect(room.slug);
+  Promise.all([getStorage('apiKey'), getStorage('room'), getStorage('theme')]).then(
+    ([apiKey, room, theme]) => {
+      if (apiKey) {
+        dddice = new ThreeDDice(canvasElement, apiKey);
+        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+        dddice.start();
+        if (room) {
+          dddice.connect(room.slug);
+        }
+        if (theme) {
+          preloadTheme(theme);
+        }
       }
-    }
-  });
+    },
+  );
 }
 
 // add canvas element to document
@@ -466,6 +476,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
+    case 'preloadTheme':
+      preloadTheme(message.theme);
   }
 });
 
