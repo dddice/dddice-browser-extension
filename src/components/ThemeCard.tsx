@@ -1,5 +1,6 @@
 /** @format */
 
+import React from 'react';
 import { ITheme } from 'dddice-js';
 
 interface IRoomCardProps {
@@ -15,10 +16,10 @@ const ThemeCard = (props: IRoomCardProps) => {
     return (
       <div
         key={theme.id}
-        className="flex flex-col border bg-no-repeat bg-contain bg-center rounded border-gray-300 bg-gray-800 p-2 pl-1 mb-2 cursor-pointer"
+        className="flex flex-col bg-no-repeat bg-contain bg-center rounded border-gray-300 border-solid border-2 bg-gray-800 p-2 pl-1 mb-2 cursor-pointer"
         style={{
-          backgroundImage: `url(${theme.preview?.preview}`,
-          backgroundColor: theme.label.background_color,
+          backgroundImage: `url(${theme.preview?.preview})`,
+          backgroundColor: theme.label?.background_color,
         }}
         onClick={() => onClick()}
       >

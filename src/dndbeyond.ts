@@ -1,7 +1,7 @@
 /** @format */
 
 import createLogger from './log';
-import { getStorage } from './storage';
+import { getStorage } from './StorageProvider';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme } from 'dddice-js';
 
 import './index.css';

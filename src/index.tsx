@@ -5,6 +5,7 @@ import './index.css';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import ReactTooltip from 'react-tooltip';
+import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
 import Back from './assets/interface-essential-left-arrow.svg';
 import Loading from './assets/loading.svg';
@@ -14,11 +15,15 @@ import imageLogo from 'url:./assets/dddice-48x48.png';
 
 import ApiKeyEntry from './components/ApiKeyEntry';
 import RoomSelection from './components/RoomSelection';
-import { IRoom, ITheme, ThreeDDiceAPI } from 'dddice-js';
+
 import Room from './components/Room';
-import { getStorage, setStorage } from './storage';
 import ThemeSelection from './components/ThemeSelection';
 import Theme from './components/Theme';
+
+import createLogger from './log';
+import StorageProvider from './StorageProvider';
+import SdkBridge from './SdkBridge';
+const log = createLogger('App');
 
 export interface IStorage {
   apiKey?: string;
@@ -36,7 +41,9 @@ export const DefaultStorage: IStorage = {
   rooms: undefined,
 };
 
-const App = () => {
+const App = props => {
+  const { storageProvider, sdkBridge } = props;
+
   /**
    * API
    */
@@ -82,29 +89,18 @@ const App = () => {
    * Connect to VTT
    */
   useEffect(() => {
-    async function connect() {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      if (/dndbeyond.com/.test(tab.url)) {
-        setIsConnected(true);
-        setVTT('D&DBeyond');
-      } else if (/roll20.net/.test(tab.url)) {
-        setIsConnected(true);
-        setVTT('Roll20');
-      }
-    }
-
-    connect();
+    setVTT('Foundry VTT');
+    setIsConnected(true);
   }, []);
 
   useEffect(() => {
     async function initStorage() {
       const [apiKey, room, theme, rooms, themes] = await Promise.all([
-        getStorage('apiKey'),
-        getStorage('room'),
-        getStorage('theme'),
-        getStorage('rooms'),
-        getStorage('themes'),
+        storageProvider.getStorage('apiKey'),
+        storageProvider.getStorage('room'),
+        storageProvider.getStorage('theme'),
+        storageProvider.getStorage('rooms'),
+        storageProvider.getStorage('themes'),
       ]);
 
       setState((storage: IStorage) => ({
@@ -134,7 +130,7 @@ const App = () => {
       themes = [...themes, ..._themes];
       _themes = (await api.current.diceBox.next())?.data;
     }
-    setStorage({
+    storageProvider.setStorage({
       themes,
     });
     setState(state => ({
@@ -147,8 +143,8 @@ const App = () => {
   const refreshRooms = async () => {
     setLoadingMessage('Loading rooms list');
     pushLoading();
-    let rooms = (await api.current.room.list()).data;
-    setStorage({ rooms });
+    const rooms = (await api.current.room.list()).data;
+    storageProvider.setStorage({ rooms });
     setState(state => ({ ...state, rooms }));
     popLoading();
   };
@@ -161,11 +157,11 @@ const App = () => {
         pushLoading();
 
         try {
-          if (!state.rooms) {
+          if (!state.rooms || state.rooms.length === 0) {
             await refreshRooms();
           }
 
-          if (!state.themes) {
+          if (!state.themes || state.themes.length === 0) {
             await refreshThemes();
           }
           popLoading();
@@ -183,15 +179,11 @@ const App = () => {
   useEffect(() => ReactTooltip.rebuild());
 
   const reloadDiceEngine = async () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'reloadDiceEngine' });
-    });
+    return undefined;
   };
 
   const preloadTheme = async (theme: ITheme) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'preloadTheme', theme });
-    });
+    return sdkBridge.preloadTheme(theme);
   };
 
   const onJoinRoom = useCallback(async (roomSlug: string) => {
@@ -209,7 +201,9 @@ const App = () => {
           throw error;
         }
         if (newRoom) {
-          await setStorage({ rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom] });
+          await storageProvider.setStorage({
+            rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom],
+          });
           setState((storage: IStorage) => ({
             ...storage,
             rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
@@ -228,7 +222,8 @@ const App = () => {
         ...storage,
         room,
       }));
-      await setStorage({ room });
+      await storageProvider.setStorage({ room });
+      ReactTooltip.hide();
       await reloadDiceEngine();
     },
     [state.rooms],
@@ -247,7 +242,9 @@ const App = () => {
       throw error;
     }
     if (newRoom) {
-      await setStorage({ rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom] });
+      await storageProvider.setStorage({
+        rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom],
+      });
       setState((storage: IStorage) => ({
         ...storage,
         rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
@@ -258,7 +255,7 @@ const App = () => {
       ...storage,
       room: newRoom,
     }));
-    await setStorage({ room: newRoom });
+    await storageProvider.setStorage({ room: newRoom });
     popLoading();
     await reloadDiceEngine();
   }, [state.rooms]);
@@ -268,10 +265,11 @@ const App = () => {
       ...storage,
       theme,
     }));
-    setStorage({ theme });
+    storageProvider.setStorage({ theme });
     if (theme) {
       preloadTheme(theme);
     }
+    ReactTooltip.hide();
   }, []);
 
   const onKeySuccess = useCallback((apiKey: string) => {
@@ -281,18 +279,18 @@ const App = () => {
       rooms: undefined,
       themes: undefined,
     }));
-    setStorage({ apiKey });
+    storageProvider.setStorage({ apiKey });
     setIsEnterApiKey(false);
     reloadDiceEngine();
   }, []);
 
   const onSignOut = useCallback(() => {
     setState(DefaultStorage);
-    setStorage({ apiKey: '' });
-    setStorage({ theme: '' });
-    setStorage({ room: '' });
-    setStorage({ rooms: '' });
-    setStorage({ themes: '' });
+    storageProvider.setStorage({ apiKey: undefined });
+    storageProvider.setStorage({ theme: undefined });
+    storageProvider.setStorage({ room: undefined });
+    storageProvider.setStorage({ rooms: undefined });
+    storageProvider.setStorage({ themes: undefined });
     setError(undefined);
     clearLoading();
   }, []);
@@ -314,7 +312,7 @@ const App = () => {
           ...storage,
           apiKey,
         }));
-        await setStorage({ apiKey });
+        await storageProvider.setStorage({ apiKey });
       } catch (error) {
         setError('could not create room');
         clearLoading();
@@ -328,29 +326,29 @@ const App = () => {
    */
   return (
     <div className="px-4 pt-2 pb-4 scroll">
+      <ReactTooltip effect="solid" />
       {isConnected && (
         <>
-          <ReactTooltip effect="solid" />
           <div className="flex flex-row items-baseline justify-center">
             {isEnterApiKey ? (
-              <button
+              <span
                 className="text-gray-700 text-xs mr-auto"
                 onClick={() => setIsEnterApiKey(false)}
               >
                 <Back className="flex h-4 w-4 m-auto" data-tip="Back" data-place="right" />
-              </button>
+              </span>
             ) : (
               <a
-                className="text-gray-700 text-xs mr-auto"
+                className="!text-gray-700 text-xs mr-auto"
                 href="https://docs.dddice.com/guides/browser-extension.html"
                 target="_blank"
               >
                 <Help className="flex h-4 w-4 m-auto" data-tip="Help" data-place="right" />
               </a>
             )}
-            <button className="text-gray-700 text-xs ml-auto" onClick={onSignOut}>
+            <span className="text-gray-700 text-xs ml-auto cursor-pointer" onClick={onSignOut}>
               <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
-            </button>
+            </span>
           </div>
         </>
       )}
@@ -389,12 +387,15 @@ const App = () => {
                   <ThemeSelection
                     themes={state.themes}
                     onSelectTheme={onChangeTheme}
-                    onConnectAccount={() => undefined}
+                    onConnectAccount={() => setIsEnterApiKey(true)}
                     onRefreshThemes={refreshThemes}
                   />
                 ) : (
                   <>
-                    <Room room={state.room} onSwitchRoom={onSwitchRoom} />
+                    <Room
+                      room={state.room || { name: 'No Room Selected' }}
+                      onSwitchRoom={onSwitchRoom}
+                    />
                     <Theme theme={state.theme} onSwitchTheme={onSwitchTheme} />
                   </>
                 )}
@@ -424,4 +425,4 @@ const App = () => {
 };
 
 const root = ReactDOM.createRoot(document.getElementById('dddice'));
-root.render(<App />);
+root.render(<App storageProvider={new StorageProvider()} sdkBridge={new SdkBridge()} />);

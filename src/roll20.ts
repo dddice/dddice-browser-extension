@@ -2,7 +2,7 @@
 
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
-import { getStorage } from './storage';
+import { getStorage } from './StorageProvider';
 import { IDiceRoll, IRoll, IRollValue, ITheme, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';

@@ -19,7 +19,7 @@ interface IThemes {
   onRefreshThemes(): void;
 }
 
-const RoomSelection = (props: IThemes) => {
+const ThemeSelection = (props: IThemes) => {
   const { themes, onSelectTheme, onConnectAccount, onRefreshThemes } = props;
 
   /**
@@ -27,30 +27,28 @@ const RoomSelection = (props: IThemes) => {
    */
   return (
     <div className="text-white flex flex-col">
-      {themes?.length > 0 && (
-        <>
-          <div className="mt-3 flex">
-            <div className="flex mr-auto">{''}</div>
-            <div className="flex flex-row text-xl my-auto justify-center">Choose Your Dice</div>
-            <button onClick={onRefreshThemes} className="ml-auto">
-              <Refresh data-tip="refresh dice box" className="flex h-4 w-4" />
-            </button>
-          </div>
-          <div className="overflow-y-auto scroll">
-            {themes.map((theme: ITheme) => (
-              <ThemeCard theme={theme} onClick={() => onSelectTheme(theme)} key={theme.id} />
-            ))}
-          </div>
-        </>
-      )}
-      <div className="text-gray-300">
+      <div className="mt-3 flex">
+        <div className="flex mr-auto">{''}</div>
+        <div className="flex flex-row text-xl my-auto justify-center">Choose Your Dice</div>
+        <span onClick={onRefreshThemes} className="ml-auto">
+          <Refresh data-tip="refresh dice box" className="flex h-4 w-4" />
+        </span>
+      </div>
+      <div className="text-gray-300 m-auto">
         Don't see your dice?{' '}
         <DddiceButton size="small" onClick={onConnectAccount} isSecondary>
           connect your account
         </DddiceButton>
       </div>
+      {themes?.length > 0 && (
+        <div className="overflow-y-auto scroll mt-2">
+          {themes.map((theme: ITheme) => (
+            <ThemeCard theme={theme} onClick={() => onSelectTheme(theme)} key={theme.id} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
-export default RoomSelection;
+export default ThemeSelection;

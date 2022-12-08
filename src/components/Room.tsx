@@ -1,6 +1,6 @@
 /** @format */
 
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { IRoom } from 'dddice-js';
 
@@ -11,12 +11,13 @@ import RoomCard from './RoomCard';
 interface IRoomProps {
   room: IRoom;
   onSwitchRoom();
+  disabled?: boolean;
 }
 
 const Room = (props: IRoomProps) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const { room, onSwitchRoom } = props;
+  const { room, onSwitchRoom, disabled } = props;
   if (room) {
     return (
       <div className="text-white">
@@ -26,7 +27,7 @@ const Room = (props: IRoomProps) => {
           {isCopied ? (
             <div className="text-neon-green text-xs ml-auto my-auto"> copied to clipboard</div>
           ) : (
-            <button
+            <span
               onClick={async () => {
                 await navigator.clipboard.writeText(
                   `${process.env.API_URI}/room/${room.slug}${
@@ -39,11 +40,16 @@ const Room = (props: IRoomProps) => {
               className="ml-auto"
             >
               <Share data-tip="copy share link" className="flex h-4 w-4" />
-            </button>
+            </span>
           )}
         </div>
-        <div data-tip="switch rooms">
-          <RoomCard room={room} onClick={() => onSwitchRoom()} key={room.slug} />
+        <div data-tip={disabled ? 'only gm can switch rooms' : 'switch rooms'}>
+          <RoomCard
+            room={room}
+            onClick={() => onSwitchRoom()}
+            disabled={disabled}
+            key={room.slug}
+          />
         </div>
       </div>
     );

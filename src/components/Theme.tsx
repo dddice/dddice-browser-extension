@@ -26,7 +26,7 @@ const Theme = (props: IThemeProps) => {
           {/*isCopied ? (
             <div className="text-neon-green text-xs ml-auto my-auto"> copied to clipboard</div>
           ) : (
-            <button
+            <span
               onClick={async () => {
                 await navigator.clipboard.writeText(`${process.env.API_URI}/dice/${theme.id}`);
                 setIsCopied(true);
@@ -35,7 +35,7 @@ const Theme = (props: IThemeProps) => {
               className="ml-auto"
             >
               <Share data-tip="copy share link" className="flex h-4 w-4" />
-            </button>
+            </span>
           )*/}
         </div>
         <div data-tip="switch dice">
