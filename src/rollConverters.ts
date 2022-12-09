@@ -1,6 +1,6 @@
 /** @format */
 
-import { getStorage } from './StorageProvider';
+import { getStorage } from './storage';
 import { Parser } from '@dice-roller/rpg-dice-roller';
 import createLogger from './log';
 const log = createLogger('roll converter');

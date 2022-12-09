@@ -15,7 +15,7 @@ import RoomCard from './RoomCard';
 interface IRooms {
   rooms: IRoom[];
   onSelectRoom(room: IRoom): void;
-  onJoinRoom(room: string): void;
+  onJoinRoom(room: string, passcode?: string): void;
   onError(message: string): void;
   onConnectAccount(): void;
   onCreateRoom(): void;
@@ -38,9 +38,10 @@ const RoomSelection = (props: IRooms) => {
 
     const formData = new FormData(event.target);
     const link = formData.get('link') as string;
+    const passcode = new URLSearchParams(link.split('?')[1]).get('passcode');
     const match = link.match(/\/room\/([a-zA-Z0-9]{7,14})/);
     if (match) {
-      onJoinRoom(match[1]);
+      onJoinRoom(match[1], passcode);
     } else {
       onError('Invalid room link.');
     }
@@ -65,9 +66,9 @@ const RoomSelection = (props: IRooms) => {
         </label>
       </form>
       <div className="flex flex-row items-center text-gray-300">
-        <div className="flex-grow border-solid border-t border-gray-700" />
+        <div className="flex-grow border-solid border-0 border-t border-gray-700" />
         <div className="pt-0 p-1">or</div>
-        <div className="flex-grow border-solid border-t border-gray-700" />
+        <div className="flex-grow border-solid border-0 border-t border-gray-700" />
       </div>
       <div className="text-gray-300 m-auto">
         Don't see your rooms?{' '}
