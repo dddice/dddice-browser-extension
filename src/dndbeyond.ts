@@ -1,7 +1,7 @@
 /** @format */
 
 import createLogger from './log';
-import { getStorage } from './storage';
+import { getStorage, migrateStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme } from 'dddice-js';
 
 import './index.css';
@@ -468,14 +468,16 @@ document.body.appendChild(canvasElement);
 document.addEventListener('click', () => {
   if (!dddice.isDiceThrowing) dddice.clear();
 });
+
 // init dddice object
-initializeSDK();
+migrateStorage().then(() => initializeSDK());
 
 // @ts-ignore
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
+      break;
     case 'preloadTheme':
       preloadTheme(message.theme);
   }

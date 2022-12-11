@@ -86,8 +86,22 @@ const DddiceSettings = props => {
    * Connect to VTT
    */
   useEffect(() => {
-    setVTT('Foundry VTT');
-    setIsConnected(true);
+    async function connect() {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+      if (/dndbeyond.com/.test(tab.url)) {
+        setIsConnected(true);
+        setVTT('D&DBeyond');
+      } else if (/roll20.net/.test(tab.url)) {
+        setIsConnected(true);
+        setVTT('Roll20');
+      } else if (/dddice.com/.test(tab.url)) {
+        setVTT('dddice');
+        setIsConnected(true);
+      }
+    }
+
+    connect();
   }, []);
 
   useEffect(() => {

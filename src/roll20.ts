@@ -2,7 +2,7 @@
 
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
-import { getStorage } from './storage';
+import { getStorage, migrateStorage } from './storage';
 import { IDiceRoll, IRoll, IRollValue, ITheme, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
@@ -32,7 +32,7 @@ function init() {
 }
 
 async function pickUpRolls() {
-  const [room] = await Promise.all([getStorage('apiKey'), getStorage('room')]);
+  const room = await getStorage('room');
   await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
 }
 
@@ -291,8 +291,10 @@ let dddice: ThreeDDice;
 document.addEventListener('click', () => {
   if (!dddice.isDiceThrowing) dddice.clear();
 });
+
 // init dddice object
-initializeSDK();
+console.log('should migrate storage');
+migrateStorage().then(() => initializeSDK());
 
 // receive reload events from popup
 // @ts-ignore
@@ -300,6 +302,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
+      break;
     case 'preloadTheme':
       preloadTheme(message.theme);
   }
