@@ -18,7 +18,6 @@ export async function setStorage(payload: object): Promise<any> {
 }
 
 export async function migrateStorage() {
-  console.log('migrate storage');
   const { apiKey, theme, room } = await chrome.storage.sync.get(['apiKey', 'theme', 'room']);
   if (apiKey) {
     await chrome.storage.local.set({ apiKey });

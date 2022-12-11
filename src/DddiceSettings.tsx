@@ -20,6 +20,9 @@ import ThemeSelection from './components/ThemeSelection';
 import Theme from './components/Theme';
 
 import createLogger from './log';
+import StorageProvider from './StorageProvider';
+import SdkBridge from './SdkBridge';
+import PermissionProvider from './PermissionProvider';
 const log = createLogger('App');
 
 export interface IStorage {
@@ -38,8 +41,14 @@ export const DefaultStorage: IStorage = {
   rooms: undefined,
 };
 
-const DddiceSettings = props => {
-  const { storageProvider, sdkBridge } = props;
+interface DddiceSettingsProps {
+  storageProvider: StorageProvider;
+  sdkBridge: SdkBridge;
+  permissionProvider: PermissionProvider;
+}
+
+const DddiceSettings = (props: DddiceSettingsProps) => {
+  const { storageProvider, sdkBridge, permissionProvider } = props;
 
   /**
    * API
@@ -87,17 +96,11 @@ const DddiceSettings = props => {
    */
   useEffect(() => {
     async function connect() {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const platform = await sdkBridge.detectPlatform();
 
-      if (/dndbeyond.com/.test(tab.url)) {
+      if (platform) {
         setIsConnected(true);
-        setVTT('D&DBeyond');
-      } else if (/roll20.net/.test(tab.url)) {
-        setIsConnected(true);
-        setVTT('Roll20');
-      } else if (/dddice.com/.test(tab.url)) {
-        setVTT('dddice');
-        setIsConnected(true);
+        setVTT(platform);
       }
     }
 
@@ -190,7 +193,7 @@ const DddiceSettings = props => {
   useEffect(() => ReactTooltip.rebuild());
 
   const reloadDiceEngine = async () => {
-    return undefined;
+    await sdkBridge.reloadDiceEngine();
   };
 
   const preloadTheme = async (theme: ITheme) => {
@@ -308,7 +311,9 @@ const DddiceSettings = props => {
     setState(DefaultStorage);
     storageProvider.setStorage({ apiKey: undefined });
     storageProvider.setStorage({ theme: undefined });
-    storageProvider.setStorage({ room: undefined });
+    if (permissionProvider.canChangeRoom()) {
+      storageProvider.setStorage({ room: undefined });
+    }
     storageProvider.setStorage({ rooms: undefined });
     storageProvider.setStorage({ themes: undefined });
     setError(undefined);
@@ -393,7 +398,7 @@ const DddiceSettings = props => {
               </div>
             ) : (
               <>
-                {!state.apiKey || !state.room ? (
+                {(!state.apiKey || !state.room) && permissionProvider.canChangeRoom() ? (
                   <RoomSelection
                     rooms={state.rooms}
                     onSelectRoom={onChangeRoom}
@@ -415,7 +420,7 @@ const DddiceSettings = props => {
                     <Room
                       room={state.room || { name: 'No Room Selected' }}
                       onSwitchRoom={onSwitchRoom}
-                      disabled={false}
+                      disabled={!permissionProvider.canChangeRoom()}
                     />
                     <Theme theme={state.theme} onSwitchTheme={onSwitchTheme} />
                   </>

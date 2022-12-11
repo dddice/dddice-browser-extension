@@ -293,7 +293,6 @@ document.addEventListener('click', () => {
 });
 
 // init dddice object
-console.log('should migrate storage');
 migrateStorage().then(() => initializeSDK());
 
 // receive reload events from popup
