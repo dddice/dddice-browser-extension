@@ -305,6 +305,8 @@ function generateChatMessage(roll: IRoll) {
     ),
   );
 
+  const roller = roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid);
+
   const chatMessageElement = document.createElement('div');
   chatMessageElement.id = `noty_bar_${crypto.randomUUID()}`;
   chatMessageElement.className =
@@ -316,7 +318,7 @@ function generateChatMessage(roll: IRoll) {
     "        <div class='dice_result__info'>\n" +
     "          <div class='dice_result__info__title'>\n" +
     "            <span class='dice_result__info__rolldetail'>dddice: </span><span\n" +
-    "            class='dice_result__rolltype rolltype_roll' style='color:#35cce6'>roll</span>\n" +
+    `            class='dice_result__rolltype rolltype_roll' style='color:${roller.color}'>${roller.username}</span>\n` +
     '          </div>\n' +
     '\n' +
     "          <div class='dice_result__info__results'>\n" +
