@@ -309,16 +309,17 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
   const onSignOut = useCallback(() => {
     setState(DefaultStorage);
-    storageProvider.setStorage({ apiKey: undefined });
-    storageProvider.setStorage({ theme: undefined });
+    storageProvider.removeStorage('apiKey');
+    storageProvider.removeStorage('theme');
     if (permissionProvider.canChangeRoom()) {
-      storageProvider.setStorage({ room: undefined });
+      storageProvider.removeStorage('room');
     }
-    storageProvider.setStorage({ rooms: undefined });
-    storageProvider.setStorage({ themes: undefined });
+    storageProvider.removeStorage('rooms')
+    storageProvider.removeStorage('themes');
     setError(undefined);
     clearLoading();
   }, []);
+
 
   const onSwitchRoom = useCallback(async () => {
     onChangeRoom(undefined);

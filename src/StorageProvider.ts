@@ -10,4 +10,8 @@ export default class StorageProvider {
   async setStorage(payload: object): Promise<any> {
     return setStorage(payload);
   }
+
+  async removeStorage(key:string): Promise<any>{
+    await chrome.storage.local.remove(key);
+  }
 }

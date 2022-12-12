@@ -3,7 +3,7 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 
 const config = {
-  safelist: ['hidden'],
+  safelist: ['hidden','success'],
   content: ['./src/**/*.{html,ts,tsx}', './src/*.{html,ts,tsx}'],
   theme: {
     extend: {

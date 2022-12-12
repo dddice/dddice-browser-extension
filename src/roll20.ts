@@ -2,12 +2,13 @@
 
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
-import { getStorage, migrateStorage } from './storage';
-import { IDiceRoll, IRoll, IRollValue, ITheme, ThreeDDice, ThreeDDiceRollEvent } from 'dddice-js';
+import { getStorage, migrateStorage, setStorage } from './storage';
+import { IDiceRoll, IRoll, IRollValue, IRoom, ITheme, ThreeDDice, ThreeDDiceAPI, ThreeDDiceRollEvent } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import './dndbeyond.css';
 import './index.css';
+import { IStorage } from './DddiceSettings';
 
 enum RollMessageType {
   not_a_roll,
@@ -88,12 +89,12 @@ function generateChatMessage(roll: IRoll) {
       (current.type === 'mod'
         ? current.value_to_display
         : `<div class="diceroll ${translateD10xs(current.type)} ${
-            current.is_dropped ? 'dropped' : ''
-          } ">
+          current.is_dropped ? 'dropped' : ''
+        } ">
           <div class="dicon">
             <div class="didroll">${
-              typeof current.value_to_display === 'object' ? '⚠' : current.value_to_display
-            }</div>
+          typeof current.value_to_display === 'object' ? '⚠' : current.value_to_display
+        }</div>
             <div class="backing"></div>
           </div>
         </div>`),
@@ -108,9 +109,9 @@ function generateChatMessage(roll: IRoll) {
         <img src="${imageLogo}" class="rounded-full bg-gray-700 h-8 mx-auto p-2">
       </div>
       <span class="tstamp"></span><span class="by">${
-        roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
-          .username
-      }</span>
+    roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
+      .username
+  }</span>
       <div class="formula" style="margin-bottom: 3px;">rolling ${roll.equation}</div>
       <div class="clear"></div>
       <div class="formula formattedformula">
@@ -171,59 +172,103 @@ function watchForRollToMake(mutations: MutationRecord[]) {
   let equation;
 
   log.info('chat box updated... looking for new rolls');
+  mutations
+    .filter(record => record.addedNodes.length > 0)
+    .forEach(mutation => {
+      mutation.addedNodes.forEach(async (node: Element) => {
+        // look for room links
+        if (node.querySelector) {
+          node.querySelectorAll('a').forEach(link => {
+            log.info('found a link', link);
+            const passcode = new URLSearchParams(link.href.split('?')[1]).get('passcode');
+            const match = link.href.match(/\/room\/([a-zA-Z0-9]{7,14})/);
+            if (match) {
+              log.debug('link matched', match);
+              link.addEventListener('click', async e => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.target.innerHTML = `joining room...`;
+                let api;
+                if (!dddice?.api) {
+                  const apiKey = (await new ThreeDDiceAPI().user.guest()).data;
+                  api = new ThreeDDiceAPI(apiKey);
+                  await setStorage({apiKey});
+                } else {
+                  api = dddice.api;
+                }
+                try {
+                  await api.room.join(match[1], passcode);
+                } catch (e) {
+                  log.warn('maybe an error?', e);
+                }
+                const room: IRoom = (await api.room.get(match[1], passcode)).data;
+                await setStorage({ room });
+                initializeSDK();
+                (e.target as HTMLElement).classList.add('text-success');
+                e.target.innerHTML = `joined room ${room.name}`;
+              });
+            }
+          });
+        }
+      });
+    });
+
   if (chatHasLoaded) {
     mutations
       .filter(record => record.addedNodes.length > 0)
       .forEach(mutation => {
         mutation.addedNodes.forEach(async (node: Element) => {
-          const rollMessageType: RollMessageType = messageRollType(node);
-          if (rollMessageType && !node.classList.contains('dddiceRoll')) {
-            log.info('found a roll', node);
-            node.classList.add('hidden');
-            await pickUpRolls();
-            addLoadingMessage();
-            external_id = node.getAttribute('data-messageid');
+          if (node.querySelector) {
+            // look for roll messages
+            const rollMessageType: RollMessageType = messageRollType(node);
+            if (rollMessageType && !node.classList.contains('dddiceRoll')) {
+              log.info('found a roll', node);
+              node.classList.add('hidden');
+              await pickUpRolls();
+              addLoadingMessage();
+              external_id = node.getAttribute('data-messageid');
 
-            if (node.classList.contains('you')) {
-              switch (rollMessageType) {
-                case RollMessageType.general: {
-                  equation = node
-                    .querySelector('.formula:not(.formattedformula)')
-                    .textContent.split('rolling ')[1];
+              if (node.classList.contains('you')) {
+                switch (rollMessageType) {
+                  case RollMessageType.general: {
+                    equation = node
+                      .querySelector('.formula:not(.formattedformula)')
+                      .textContent.split('rolling ')[1];
 
-                  dice = await convertRoll20RollToDddiceRoll(
-                    node.querySelector('.formattedformula'),
-                  );
-                  await rollCreate(dice, external_id, node, equation);
-                  break;
-                }
-
-                case RollMessageType.CoC:
-                case RollMessageType.inline: {
-                  const rollNodes = node.querySelectorAll('.inlinerollresult');
-                  for (const rollNode of rollNodes) {
-                    let _;
-                    let result;
-                    [_, equation, result] = rollNode
-                      .getAttribute('title')
-                      .replace(/\[.*?]/g, '')
-                      .match(/rolling ([%*+\-/^.0-9dkh]*).* = (.*)/i) ?? [null, null, null];
-
-                    if (equation && result) {
-                      dice = await convertInlineRollToDddiceRoll(equation, result);
-                      await rollCreate(dice, external_id, node, equation);
-                    }
+                    dice = await convertRoll20RollToDddiceRoll(
+                      node.querySelector('.formattedformula'),
+                    );
+                    await rollCreate(dice, external_id, node, equation);
+                    break;
                   }
-                  break;
+
+                  case RollMessageType.CoC:
+                  case RollMessageType.inline: {
+                    const rollNodes = node.querySelectorAll('.inlinerollresult');
+                    for (const rollNode of rollNodes) {
+                      let _;
+                      let result;
+                      [_, equation, result] = rollNode
+                        .getAttribute('title')
+                        .replace(/\[.*?]/g, '')
+                        .match(/rolling ([%*+\-/^.0-9dkh]*).* = (.*)/i) ?? [null, null, null];
+
+                      if (equation && result) {
+                        dice = await convertInlineRollToDddiceRoll(equation, result);
+                        await rollCreate(dice, external_id, node, equation);
+                      }
+                    }
+                    break;
+                  }
                 }
+              } else {
+                // set a timer and unhide the message after a bit,
+                // as a kludge for players not using the plugin
+                setTimeout(() => {
+                  node.classList.remove('hidden');
+                  removeLoadingMessage();
+                }, 3000);
               }
-            } else {
-              // set a timer and unhide the message after a bit,
-              // as a kludge for players not using the plugin
-              setTimeout(() => {
-                node.classList.remove('hidden');
-                removeLoadingMessage();
-              }, 3000);
             }
           }
         });
@@ -297,7 +342,7 @@ migrateStorage().then(() => initializeSDK());
 
 // receive reload events from popup
 // @ts-ignore
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();

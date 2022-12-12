@@ -8,5 +8,10 @@ import PermissionProvider from './PermissionProvider';
 import DddiceSettings from './DddiceSettings';
 
 const root = ReactDOM.createRoot(document.getElementById('dddice'));
-root.render(<DddiceSettings storageProvider={new StorageProvider()} sdkBridge={new SdkBridge()}
-                            permissionProvider={new PermissionProvider()} />);
+root.render(
+  <DddiceSettings
+    storageProvider={new StorageProvider()}
+    sdkBridge={new SdkBridge()}
+    permissionProvider={new PermissionProvider()}
+  />,
+);

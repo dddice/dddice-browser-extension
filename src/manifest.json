@@ -13,50 +13,25 @@
   },
   "content_scripts": [
     {
-      "js": [
-        "./dndbeyond.ts"
-      ],
-      "css": [
-        "./dndbeyond.css"
-      ],
-      "matches": [
-        "*://*.dndbeyond.com/characters/*"
-      ]
+      "js": ["./dndbeyond.ts"],
+      "css": ["./dndbeyond.css"],
+      "matches": ["*://*.dndbeyond.com/characters/*","*://*.dndbeyond.com/encounter-builder*","*://*.dndbeyond.com/combat-tracker/*"]
     },
     {
-      "js": [
-        "./roll20.ts"
-      ],
-      "css": [
-        "./roll20.css"
-      ],
-      "matches": [
-        "*://*.roll20.net/editor/"
-      ]
+      "js": ["./roll20.ts"],
+      "css": ["./roll20.css"],
+      "matches": ["*://*.roll20.net/editor/"]
     }
   ],
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": [
-        "dndbeyond.css",
-        "assets/dddice-32x32.png"
-      ],
-      "matches": [
-        "https://www.dndbeyond.com/*"
-      ]
+      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
+      "matches": ["https://www.dndbeyond.com/*"]
     },
     {
-      "resources": [
-        "roll20.css",
-        "assets/dddice-48x48.png"
-      ],
-      "matches": [
-        "https://*.roll20.net/*"
-      ]
+      "resources": ["roll20.css", "assets/dddice-48x48.png"],
+      "matches": ["https://*.roll20.net/*"]
     }
   ]
 }

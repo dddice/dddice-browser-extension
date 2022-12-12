@@ -23,12 +23,14 @@ const DEFAULT_THEME = 'dddice-standard';
  * Initialize listeners on all attacks
  */
 function init() {
+  log.debug("init");
   const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
   const characterSheetDiceElements = document.querySelectorAll('.integrated-dice__container');
   const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
   const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
+  const isCharacterSheet = document.querySelector('.character-app');
   if (
-    characterSheetDiceElements.length === 0 ||
+    (characterSheetDiceElements.length === 0 && isCharacterSheet )||
     diceMenuDiceElements.length === 0 ||
     !rollButton ||
     !customRollMenuButton
@@ -45,7 +47,9 @@ function init() {
   });
 
   // Add listeners to the left-hand dice menu
+  log.debug("dice buttons", diceMenuDiceElements);
   diceMenuDiceElements.forEach(element => {
+    log.debug("button?");
     element.addEventListener('click', addDieToRoll, true);
     element.addEventListener('auxclick', removeDieFromRoll, true);
   });
@@ -62,6 +66,7 @@ function clearCustomRoll() {
 }
 
 function addDieToRoll() {
+  log.debug("add die to roll");
   const dieType = this.dataset.dice;
   log.info(`add ${dieType} to roll`);
   if (customRoll[dieType]) {
@@ -189,7 +194,8 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
     e.preventDefault();
     e.stopPropagation();
 
-    const text = (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent;
+    const text = ((this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent).replace(/[() ]/g,"");
+    log.debug("equation", text);
     let modifier: number;
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
     let dieType = 'd20';
@@ -232,6 +238,7 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 }
 
 async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
+  log.debug("creating a roll", {roll,modifier,operator});
   const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
 
   const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
