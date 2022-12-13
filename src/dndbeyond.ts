@@ -218,7 +218,9 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
       modifier = Number(num);
     } else if (!isNaN(+text)) {
       // convert raw stat into modifier
-      modifier = Math.floor(Number(text) / 2) - 5;
+      if(Number(text) != 0) {
+        modifier = Math.floor(Number(text) / 2) - 5;
+      }
     }
 
     // close the overlay
