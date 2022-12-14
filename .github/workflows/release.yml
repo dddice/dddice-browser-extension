@@ -11,6 +11,18 @@ on:
         description: 'Release Tag'
         required: true
         type: string
+      chrome:
+        description: 'Chrome Webstore'
+        default: true
+        type: boolean
+      opera:
+        description: 'Opera Addins Store'
+        default: true
+        type: boolean
+      force:
+        description: 'Force Release'
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -34,13 +46,23 @@ jobs:
           MANIFEST=$(cat src/manifest.json | jq ".version |= \"${VERSION/v/}\"")
           echo "$MANIFEST" > src/manifest.json
 
-      - name: Tag Release
+      - name: Commit
         run: |
           git add .
           git config user.email "developers@dddice.com"
           git config user.name "dddice"
-          git commit -m "release: ${{ github.event.inputs.tag }}" || echo 'ok'
+          git commit -m "release: ${{ github.event.inputs.tag }}-${{ github.run_number }}" || echo 'ok'
           git push
+
+      - name: Tag
+        if: inputs.force == false
+        run: |
+          git tag ${{ github.event.inputs.tag }}
+          git push origin ${{ github.event.inputs.tag }}
+
+      - name: Tag (Force)
+        if: inputs.force
+        run: |
           git tag -f ${{ github.event.inputs.tag }}
           git push -f origin ${{ github.event.inputs.tag }}
 
@@ -93,27 +115,19 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          release_name: ${{ github.event.inputs.tag }}
+          tag: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.tag }}
           body: ${{ steps.release.outputs.RELEASE_BODY }}
           draft: false
           prerelease: false
-
-      - name: Upload Artifacts
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dddice-browser-extension.zip
-          asset_name: dddice-browser-extension.zip
-          asset_content_type: application/zip
+          allowUpdates: true
+          artifacts: dddice-browser-extension.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   chrome:
+    if: inputs.chrome == true
     name: Upload to Chrome Web Store
     needs: release
     runs-on: ubuntu-latest
@@ -124,46 +138,6 @@ jobs:
           path: .
           key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
 
-      - name: Generate Changelog
-        id: git-cliff
-        uses: orhun/git-cliff-action@v1
-        with:
-          config: cliff.toml
-          args: --current --date-order --strip all
-        env:
-          OUTPUT: CHANGES.md
-
-      - name: Set the release body
-        id: release
-        shell: bash
-        run: |
-          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
-          echo "RELEASE_BODY<<EOF" >>$GITHUB_OUTPUT
-          echo "$r" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.tag }}
-          release_name: ${{ github.event.inputs.tag }}
-          body: ${{ steps.release.outputs.RELEASE_BODY }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Artifacts
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dddice-browser-extension.zip
-          asset_name: dddice-browser-extension.zip
-          asset_content_type: application/zip
-
       - name: Publish Chrome
         uses: levigo/github-action-chrome-webstore-publish@v1.0
         with:
@@ -173,6 +147,17 @@ jobs:
           refreshToken: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
           inputFile: './dddice-browser-extension.zip'
           doPublish: true
+  opera:
+    if: inputs.opera == true
+    name: Upload to Opera Addons Store
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
 
       - name: Publish Opera
         env:
@@ -180,4 +165,4 @@ jobs:
           WEXT_SHIPIT_OPERA_EXTENSION_ID: ${{ secrets.OPERA_EXTENSION_ID }}
           WEXT_SHIPIT_OPERA_PASSWORD: ${{ secrets.OPERA_PASSWORD }}
         run: |
-          npx @wext/shipit opera dddice-browser-extension.zip
+          npx @wext/shipit opera dist
