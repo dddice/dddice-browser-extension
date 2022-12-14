@@ -1,6 +1,6 @@
 {
   "name": "dddice-browser-extension",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Roll 3D digital dice using your favorite browser-based VTT.",
   "repository": "git@github.com:dddice/dddice-browser-extension.git",
   "author": "dddice <developers@dddice.com>",
