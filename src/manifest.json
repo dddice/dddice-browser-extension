@@ -20,9 +20,7 @@
         "./dndbeyond.css"
       ],
       "matches": [
-        "*://*.dndbeyond.com/characters/*",
-        "*://*.dndbeyond.com/encounter-builder*",
-        "*://*.dndbeyond.com/combat-tracker/*"
+        "*://*.dndbeyond.com/*"
       ]
     },
     {

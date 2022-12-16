@@ -14,51 +14,75 @@ log.info('DDDICE D&D BEYOND');
 const RETRY_TIMEOUT = 100;
 const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
-
+let canvasElement:HTMLCanvasElement;
 let customRoll: Record<string, number> = {};
-
 const DEFAULT_THEME = 'dddice-standard';
 
 /**
  * Initialize listeners on all attacks
  */
 function init() {
-  log.debug("init");
-  const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
-  const characterSheetDiceElements = document.querySelectorAll('.integrated-dice__container');
-  const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
-  const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
-  const isCharacterSheet = document.querySelector('.character-app');
-  if (
-    (characterSheetDiceElements.length === 0 && isCharacterSheet )||
-    diceMenuDiceElements.length === 0 ||
-    !rollButton ||
-    !customRollMenuButton
-  )
-    return setTimeout(init, RETRY_TIMEOUT); // retry if missing
+  /*
+  "*://*.dndbeyond.com/characters/*",
+        "*://*.dndbeyond.com/encounter-builder*",
+        "*://*.dndbeyond.com/combat-tracker/*"
+        */
+  if(/.*\/(characters|encourner-builder|combat-tracker|encounters)\/.*/.test(window.location.href)) {
+    log.debug('init');
+    // add canvas element to document
+    if (!document.getElementById('dddice-canvas')) {
+      canvasElement = document.createElement('canvas');
+      canvasElement.id = 'dddice-canvas';
+      canvasElement.className = 'fixed top-0 z-50 h-screen w-screen opacity-100 pointer-events-none';
+      document.body.appendChild(canvasElement);
+      // init dddice object
+      migrateStorage().then(() => initializeSDK());
+    }
 
-  // Add listeners to character sheet roll buttons
-  characterSheetDiceElements.forEach(element => {
-    // Add listener to send roll to dddice
-    element.addEventListener('pointerover', onPointerOver, true);
-    element.addEventListener('pointerout', onPointerOut, true);
-    element.removeEventListener('click', rollFromCharacterSheet, true);
-    element.addEventListener('click', rollFromCharacterSheet, true);
-  });
+    const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
+    const characterSheetDiceElements = document.querySelectorAll('.integrated-dice__container');
+    const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
+    const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
+    const isCharacterSheet = document.querySelector('.character-app');
+    if (
+      (characterSheetDiceElements.length === 0 && isCharacterSheet) ||
+      diceMenuDiceElements.length === 0 ||
+      !rollButton ||
+      !customRollMenuButton
+    )
+      return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
-  // Add listeners to the left-hand dice menu
-  log.debug("dice buttons", diceMenuDiceElements);
-  diceMenuDiceElements.forEach(element => {
-    log.debug("button?");
-    element.addEventListener('click', addDieToRoll, true);
-    element.addEventListener('auxclick', removeDieFromRoll, true);
-  });
+    // Add listeners to character sheet roll buttons
+    characterSheetDiceElements.forEach(element => {
+      // Add listener to send roll to dddice
+      element.addEventListener('pointerover', onPointerOver, true);
+      element.addEventListener('pointerout', onPointerOut, true);
+      element.removeEventListener('click', rollFromCharacterSheet, true);
+      element.addEventListener('click', rollFromCharacterSheet, true);
+    });
 
-  // Add roll button listeners
-  rollButton.addEventListener('click', executeCustomRoll, true);
-  customRollMenuButton.addEventListener('click', clearCustomRoll, true);
+    // Add listeners to the left-hand dice menu
+    log.debug('dice buttons', diceMenuDiceElements);
+    diceMenuDiceElements.forEach(element => {
+      log.debug('button?');
+      element.addEventListener('click', addDieToRoll, true);
+      element.addEventListener('auxclick', removeDieFromRoll, true);
+    });
 
-  if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
+    // Add roll button listeners
+    rollButton.addEventListener('click', executeCustomRoll, true);
+    customRollMenuButton.addEventListener('click', clearCustomRoll, true);
+
+    if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
+  }
+  else{
+    log.debug("uninit");
+    const currentCanvas = document.getElementById('dddice-canvas');
+    if (currentCanvas) {
+      currentCanvas.remove();
+      dddice = undefined;
+    }
+  }
 }
 
 function clearCustomRoll() {
@@ -66,7 +90,7 @@ function clearCustomRoll() {
 }
 
 function addDieToRoll() {
-  log.debug("add die to roll");
+  log.debug('add die to roll');
   const dieType = this.dataset.dice;
   log.info(`add ${dieType} to roll`);
   if (customRoll[dieType]) {
@@ -187,15 +211,15 @@ function rollFromCharacterSheet(e) {
  * Send roll event to dddice extension which will send to API
  */
 function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
-  return function (e) {
+  return function(e) {
     log.debug('onPointerUp');
     if (e.button === 2) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const text = ((this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent).replace(/[() ]/g,"");
-    log.debug("equation", text);
+    const text = ((this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent).replace(/[() ]/g, '');
+    log.debug('equation', text);
     let modifier: number;
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
     let dieType = 'd20';
@@ -218,7 +242,7 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
       modifier = Number(num);
     } else if (!isNaN(+text)) {
       // convert raw stat into modifier
-      if(Number(text) != 0) {
+      if (Number(text) != 0) {
         modifier = Math.floor(Number(text) / 2) - 5;
       }
     }
@@ -240,7 +264,7 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 }
 
 async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
-  log.debug("creating a roll", {roll,modifier,operator});
+  log.debug('creating a roll', { roll, modifier, operator });
   const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
 
   const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
@@ -315,15 +339,15 @@ function generateChatMessage(roll: IRoll) {
     'noty_bar noty_type__alert noty_theme__valhalla noty_close_with_click animated faster bounceInUp';
   chatMessageElement.addEventListener('click', () => removeChatMessage(chatMessageElement));
   chatMessageElement.innerHTML =
-    "    <div class='noty_body'>\n" +
-    "      <div class='dice_result '>\n" +
-    "        <div class='dice_result__info'>\n" +
-    "          <div class='dice_result__info__title'>\n" +
-    "            <span class='dice_result__info__rolldetail'>dddice: </span><span\n" +
+    '    <div class=\'noty_body\'>\n' +
+    '      <div class=\'dice_result \'>\n' +
+    '        <div class=\'dice_result__info\'>\n' +
+    '          <div class=\'dice_result__info__title\'>\n' +
+    '            <span class=\'dice_result__info__rolldetail\'>dddice: </span><span\n' +
     `            class='dice_result__rolltype rolltype_roll' style='color:${roller.color}'>${roller.username}</span>\n` +
     '          </div>\n' +
     '\n' +
-    "          <div class='dice_result__info__results'>\n" +
+    '          <div class=\'dice_result__info__results\'>\n' +
     '\n' +
     `            <span class='dice-icon-die dice-icon-die--${largestDie}' alt=''></span>\n` +
     '\n' +
@@ -331,8 +355,8 @@ function generateChatMessage(roll: IRoll) {
     '          </div>\n' +
     `          <span class='dice_result__info__dicenotation' title='${roll.equation}'>${roll.equation}</span>\n` +
     '        </div>\n' +
-    "        <span class='dice_result__divider dice_result__divider--'></span>\n" +
-    "        <div class='dice_result__total-container'>\n" +
+    '        <span class=\'dice_result__divider dice_result__divider--\'></span>\n' +
+    '        <div class=\'dice_result__total-container\'>\n' +
     '\n' +
     `          <span class='dice_result__total-result dice_result__total-result-'>${
       typeof roll.total_value === 'object' ? '⚠' : roll.total_value
@@ -340,7 +364,7 @@ function generateChatMessage(roll: IRoll) {
     '        </div>\n' +
     '      </div>\n' +
     '    </div>\n' +
-    "    <div class='noty_progressbar'></div>\n";
+    '    <div class=\'noty_progressbar\'></div>\n';
   return chatMessageElement;
 }
 
@@ -469,22 +493,13 @@ function initializeSDK() {
   );
 }
 
-// add canvas element to document
-const canvasElement = document.createElement('canvas');
-canvasElement.id = 'dddice-canvas';
-canvasElement.className = 'fixed top-0 z-50 h-screen w-screen opacity-100 pointer-events-none';
-document.body.appendChild(canvasElement);
-
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (!dddice.isDiceThrowing) dddice.clear();
+  if (dddice && !dddice.isDiceThrowing) dddice.clear();
 });
 
-// init dddice object
-migrateStorage().then(() => initializeSDK());
-
 // @ts-ignore
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
