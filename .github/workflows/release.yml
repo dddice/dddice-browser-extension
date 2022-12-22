@@ -51,7 +51,7 @@ jobs:
           git add .
           git config user.email "developers@dddice.com"
           git config user.name "dddice"
-          git commit -m "release: ${{ github.event.inputs.tag }}-${{ github.run_number }}" || echo 'ok'
+          git commit --allow-empty -m "release: ${{ github.event.inputs.tag }}-${{ github.run_number }}" || echo 'ok'
           git push
 
       - name: Tag
