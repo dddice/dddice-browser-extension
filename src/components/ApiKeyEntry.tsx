@@ -9,6 +9,8 @@ import classNames from 'classnames';
 
 import { ThreeDDiceAPI, IUser } from 'dddice-js';
 
+import Check from '../assets/interface-essential-checkmark-sqaure-copy.svg';
+
 interface ISplash {
   onSuccess(apiKey: string, user: IUser): any;
 }
@@ -53,7 +55,7 @@ const ApiKeyEntry = (props: ISplash) => {
   return (
     <>
       <form className="mt-4 !text-white" onSubmit={onSubmit}>
-        <label>
+        <label className="flex flex-row">
           <input
             autoComplete="off"
             className={classNames(
@@ -65,6 +67,9 @@ const ApiKeyEntry = (props: ISplash) => {
             placeholder="Enter API Key"
             type="password"
           />
+          <button formaction="submit" className="!text-gray-300">
+            <Check className="ml-1 flex h-10 w-10 m-auto" data-tip="Submit" data-place="right" />
+          </button>
         </label>
       </form>
 

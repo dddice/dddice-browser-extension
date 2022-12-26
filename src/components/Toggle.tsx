@@ -1,8 +1,10 @@
+/** @format */
+
 import React, { useState, useCallback, useEffect } from 'react';
 import classNames from 'classnames';
 
 export default ({ onChange, value = false }) => {
-    const [isEnabled, setIsEnabled] = useState(value)
+  const [isEnabled, setIsEnabled] = useState(value);
 
   const onClick = useCallback(() => {
     onChange(!isEnabled);

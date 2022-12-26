@@ -13,50 +13,28 @@
   },
   "content_scripts": [
     {
-      "js": [
-        "./dndbeyond.ts"
-      ],
-      "css": [
-        "./dndbeyond.css"
-      ],
-      "matches": [
-        "*://*.dndbeyond.com/*"
-      ]
+      "js": ["./dndbeyond.ts"],
+      "css": ["./dndbeyond.css"],
+      "matches": ["*://*.dndbeyond.com/*"],
+      "run_at": "document_idle"
     },
     {
-      "js": [
-        "./roll20.ts"
-      ],
-      "css": [
-        "./roll20.css"
-      ],
-      "matches": [
-        "*://*.roll20.net/editor/"
-      ]
+      "js": ["./roll20.ts"],
+      "css": ["./roll20.css"],
+      "matches": ["*://*.roll20.net/editor/"],
+      "run_at": "document_idle"
     }
   ],
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://cdn.dddice.com/*"],
   "web_accessible_resources": [
     {
-      "resources": [
-        "dndbeyond.css",
-        "assets/dddice-32x32.png"
-      ],
-      "matches": [
-        "https://www.dndbeyond.com/*"
-      ]
+      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
+      "matches": ["https://www.dndbeyond.com/*"]
     },
     {
-      "resources": [
-        "roll20.css",
-        "assets/dddice-48x48.png"
-      ],
-      "matches": [
-        "https://*.roll20.net/*"
-      ]
+      "resources": ["roll20.css", "assets/dddice-48x48.png"],
+      "matches": ["https://*.roll20.net/*"]
     }
   ]
 }

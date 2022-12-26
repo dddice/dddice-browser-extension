@@ -11,7 +11,7 @@ export default class StorageProvider {
     return setStorage(payload);
   }
 
-  async removeStorage(key:string): Promise<any>{
+  async removeStorage(key: string): Promise<any> {
     await chrome.storage.local.remove(key);
   }
 }

@@ -8,6 +8,7 @@ import React from 'react';
 import { IRoom } from 'dddice-js';
 
 import Refresh from '../assets/arrows-diagrams-arrow-rotate-1.svg';
+import Check from '../assets/interface-essential-checkmark-sqaure-copy.svg';
 
 import DddiceButton from './DddiceButton';
 import RoomCard from './RoomCard';
@@ -60,9 +61,12 @@ const RoomSelection = (props: IRooms) => {
         </span>
       </div>
       <form onSubmit={onChangeLink}>
-        <label className="text-gray-300 m-2 flex flex-row justify-center">
+        <label className="text-gray-300 my-2 flex flex-row justify-center">
           <div className="mr-2">Join Via Link</div>
           <input name="link" className="bg-gray-800 rounded text-gray-100" />
+          <button formAction="submit" className="!text-gray-300">
+            <Check className="ml-1 flex h-4 w-4 m-auto" data-tip="Join" data-place="right" />
+          </button>
         </label>
       </form>
       <div className="flex flex-row items-center text-gray-300">

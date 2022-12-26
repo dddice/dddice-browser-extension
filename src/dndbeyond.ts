@@ -14,23 +14,21 @@ log.info('DDDICE D&D BEYOND');
 const RETRY_TIMEOUT = 100;
 const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
-let canvasElement:HTMLCanvasElement;
+let canvasElement: HTMLCanvasElement;
 let customRoll: Record<string, number> = {};
 const DEFAULT_THEME = 'dddice-standard';
 
 /**
  * Initialize listeners on all attacks
  */
-function init() {
-  /*
-  "*://*.dndbeyond.com/characters/*",
-        "*://*.dndbeyond.com/encounter-builder*",
-        "*://*.dndbeyond.com/combat-tracker/*"
-        */
-  if(/.*\/(characters|encourner-builder|combat-tracker|encounters)\/.*/.test(window.location.href)) {
+async function init() {
+  if (
+    /.*\/(characters|encourner-builder|combat-tracker|encounters)\/.*/.test(window.location.href)
+  ) {
     log.debug('init');
     // add canvas element to document
-    if (!document.getElementById('dddice-canvas')) {
+    const renderMode = getStorage("render mode");
+    if (!document.getElementById('dddice-canvas') && renderMode) {
       migrateStorage().then(() => initializeSDK());
     }
 
@@ -69,9 +67,8 @@ function init() {
     customRollMenuButton.addEventListener('click', clearCustomRoll, true);
 
     if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
-  }
-  else{
-    log.debug("uninit");
+  } else {
+    log.debug('uninit');
     const currentCanvas = document.getElementById('dddice-canvas');
     if (currentCanvas) {
       currentCanvas.remove();
@@ -206,14 +203,16 @@ function rollFromCharacterSheet(e) {
  * Send roll event to dddice extension which will send to API
  */
 function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
-  return function(e) {
+  return function (e) {
     log.debug('onPointerUp');
     if (e.button === 2) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const text = ((this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent).replace(/[() ]/g, '');
+    const text = (
+      (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent
+    ).replace(/[() ]/g, '');
     log.debug('equation', text);
     let modifier: number;
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
@@ -326,7 +325,9 @@ function generateChatMessage(roll: IRoll) {
     ),
   );
 
-  const roller = roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid);
+  const roller = roll.room.participants.find(
+    participant => participant.user.uuid === roll.user.uuid,
+  );
 
   const chatMessageElement = document.createElement('div');
   chatMessageElement.id = `noty_bar_${crypto.randomUUID()}`;
@@ -334,15 +335,15 @@ function generateChatMessage(roll: IRoll) {
     'noty_bar noty_type__alert noty_theme__valhalla noty_close_with_click animated faster bounceInUp';
   chatMessageElement.addEventListener('click', () => removeChatMessage(chatMessageElement));
   chatMessageElement.innerHTML =
-    '    <div class=\'noty_body\'>\n' +
-    '      <div class=\'dice_result \'>\n' +
-    '        <div class=\'dice_result__info\'>\n' +
-    '          <div class=\'dice_result__info__title\'>\n' +
-    '            <span class=\'dice_result__info__rolldetail\'>dddice: </span><span\n' +
+    "    <div class='noty_body'>\n" +
+    "      <div class='dice_result '>\n" +
+    "        <div class='dice_result__info'>\n" +
+    "          <div class='dice_result__info__title'>\n" +
+    "            <span class='dice_result__info__rolldetail'>dddice: </span><span\n" +
     `            class='dice_result__rolltype rolltype_roll' style='color:${roller.color}'>${roller.username}</span>\n` +
     '          </div>\n' +
     '\n' +
-    '          <div class=\'dice_result__info__results\'>\n' +
+    "          <div class='dice_result__info__results'>\n" +
     '\n' +
     `            <span class='dice-icon-die dice-icon-die--${largestDie}' alt=''></span>\n` +
     '\n' +
@@ -350,8 +351,8 @@ function generateChatMessage(roll: IRoll) {
     '          </div>\n' +
     `          <span class='dice_result__info__dicenotation' title='${roll.equation}'>${roll.equation}</span>\n` +
     '        </div>\n' +
-    '        <span class=\'dice_result__divider dice_result__divider--\'></span>\n' +
-    '        <div class=\'dice_result__total-container\'>\n' +
+    "        <span class='dice_result__divider dice_result__divider--'></span>\n" +
+    "        <div class='dice_result__total-container'>\n" +
     '\n' +
     `          <span class='dice_result__total-result dice_result__total-result-'>${
       typeof roll.total_value === 'object' ? '⚠' : roll.total_value
@@ -359,7 +360,7 @@ function generateChatMessage(roll: IRoll) {
     '        </div>\n' +
     '      </div>\n' +
     '    </div>\n' +
-    '    <div class=\'noty_progressbar\'></div>\n';
+    "    <div class='noty_progressbar'></div>\n";
   return chatMessageElement;
 }
 
@@ -471,53 +472,53 @@ function preloadTheme(theme: ITheme) {
 }
 
 function initializeSDK() {
-  Promise.all([getStorage('apiKey'), getStorage('room'), getStorage('theme'), getStorage('render mode')]).then(
-    ([apiKey, room, theme, renderMode]) => {
-      if (apiKey) {
-        log.debug("initializeSDK");
-        if(dddice) {
-          // clear the board
-          if(canvasElement) canvasElement.remove();
-          // disconnect from echo
-          dddice.api.connection.disconnect();
-          // stop the animation loop
-          dddice.stop();
-        }
-        if(renderMode) {
-          canvasElement = document.createElement('canvas');
-          canvasElement.id = 'dddice-canvas';
-          canvasElement.style.top = '0px';
-          canvasElement.style.position = 'fixed';
-          canvasElement.style.pointerEvents = 'none';
-          canvasElement.style.zIndex = '100000';
-          canvasElement.style.opacity = '100';
-          canvasElement.style.height = '100vh';
-          canvasElement.style.width = '100vw';
-          document.body.appendChild(canvasElement);
-          dddice = new ThreeDDice(canvasElement, apiKey);
-          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-          dddice.start();
-          if (room) {
-            dddice.connect(room.slug);
-          }
-          if (theme) {
-            preloadTheme(theme);
-          }
-        }
-        else
-        {
-          dddice = new ThreeDDice();
-          dddice.api = new ThreeDDiceAPI(apiKey);
-          if(room) {
-            dddice.api.connect(room.slug);
-          }
-          dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
-            updateChat(roll),
-          );
-        }
+  Promise.all([
+    getStorage('apiKey'),
+    getStorage('room'),
+    getStorage('theme'),
+    getStorage('render mode'),
+  ]).then(([apiKey, room, theme, renderMode]) => {
+    if (apiKey) {
+      log.debug('initializeSDK');
+      if (dddice) {
+        // clear the board
+        if (canvasElement) canvasElement.remove();
+        // disconnect from echo
+        dddice.api.connection.disconnect();
+        // stop the animation loop
+        dddice.stop();
       }
-    },
-  );
+      if (renderMode) {
+        canvasElement = document.createElement('canvas');
+        canvasElement.id = 'dddice-canvas';
+        canvasElement.style.top = '0px';
+        canvasElement.style.position = 'fixed';
+        canvasElement.style.pointerEvents = 'none';
+        canvasElement.style.zIndex = '100000';
+        canvasElement.style.opacity = '100';
+        canvasElement.style.height = '100vh';
+        canvasElement.style.width = '100vw';
+        document.body.appendChild(canvasElement);
+        dddice = new ThreeDDice(canvasElement, apiKey);
+        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+        dddice.start();
+        if (room) {
+          dddice.connect(room.slug);
+        }
+        if (theme) {
+          preloadTheme(theme);
+        }
+      } else {
+        log.debug("in render mode off");
+        dddice = new ThreeDDice();
+        dddice.api = new ThreeDDiceAPI(apiKey);
+        if (room) {
+          dddice.api.connect(room.slug);
+        }
+        dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) => setTimeout(()=>updateChat(roll),1500));
+      }
+    }
+  });
 }
 
 // clear all dice on any click, just like d&d beyond does
@@ -526,7 +527,7 @@ document.addEventListener('click', () => {
 });
 
 // @ts-ignore
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
