@@ -1,5 +1,7 @@
 /** @format */
-import ReactDOM from 'react-dom';
+
+import './index.css';
+import ReactDOM from 'react-dom/client';
 
 import StorageProvider from './StorageProvider';
 import SdkBridge from './SdkBridge';

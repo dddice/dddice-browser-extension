@@ -2,7 +2,7 @@
 
 import createLogger from './log';
 import { getStorage, migrateStorage } from './storage';
-import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme } from 'dddice-js';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
 import './index.css';
 import './dndbeyond.css';
@@ -31,11 +31,6 @@ function init() {
     log.debug('init');
     // add canvas element to document
     if (!document.getElementById('dddice-canvas')) {
-      canvasElement = document.createElement('canvas');
-      canvasElement.id = 'dddice-canvas';
-      canvasElement.className = 'fixed top-0 z-50 h-screen w-screen opacity-100 pointer-events-none';
-      document.body.appendChild(canvasElement);
-      // init dddice object
       migrateStorage().then(() => initializeSDK());
     }
 
@@ -73,7 +68,7 @@ function init() {
     rollButton.addEventListener('click', executeCustomRoll, true);
     customRollMenuButton.addEventListener('click', clearCustomRoll, true);
 
-    if (dddice) dddice.resize(window.innerWidth, window.innerHeight);
+    if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
   }
   else{
     log.debug("uninit");
@@ -476,17 +471,49 @@ function preloadTheme(theme: ITheme) {
 }
 
 function initializeSDK() {
-  Promise.all([getStorage('apiKey'), getStorage('room'), getStorage('theme')]).then(
-    ([apiKey, room, theme]) => {
+  Promise.all([getStorage('apiKey'), getStorage('room'), getStorage('theme'), getStorage('render mode')]).then(
+    ([apiKey, room, theme, renderMode]) => {
       if (apiKey) {
-        dddice = new ThreeDDice(canvasElement, apiKey);
-        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-        dddice.start();
-        if (room) {
-          dddice.connect(room.slug);
+        log.debug("initializeSDK");
+        if(dddice) {
+          // clear the board
+          if(canvasElement) canvasElement.remove();
+          // disconnect from echo
+          dddice.api.connection.disconnect();
+          // stop the animation loop
+          dddice.stop();
         }
-        if (theme) {
-          preloadTheme(theme);
+        if(renderMode) {
+          canvasElement = document.createElement('canvas');
+          canvasElement.id = 'dddice-canvas';
+          canvasElement.style.top = '0px';
+          canvasElement.style.position = 'fixed';
+          canvasElement.style.pointerEvents = 'none';
+          canvasElement.style.zIndex = '100000';
+          canvasElement.style.opacity = '100';
+          canvasElement.style.height = '100vh';
+          canvasElement.style.width = '100vw';
+          document.body.appendChild(canvasElement);
+          dddice = new ThreeDDice(canvasElement, apiKey);
+          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+          dddice.start();
+          if (room) {
+            dddice.connect(room.slug);
+          }
+          if (theme) {
+            preloadTheme(theme);
+          }
+        }
+        else
+        {
+          dddice = new ThreeDDice();
+          dddice.api = new ThreeDDiceAPI(apiKey);
+          if(room) {
+            dddice.api.connect(room.slug);
+          }
+          dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
+            updateChat(roll),
+          );
         }
       }
     },

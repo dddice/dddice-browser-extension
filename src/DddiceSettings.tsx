@@ -1,6 +1,5 @@
 /** @format */
 
-import './index.css';
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactTooltip from 'react-tooltip';
@@ -23,6 +22,8 @@ import createLogger from './log';
 import StorageProvider from './StorageProvider';
 import SdkBridge from './SdkBridge';
 import PermissionProvider from './PermissionProvider';
+import Toggle from './components/Toggle';
+
 const log = createLogger('App');
 
 export interface IStorage {
@@ -39,6 +40,7 @@ export const DefaultStorage: IStorage = {
   theme: undefined,
   themes: undefined,
   rooms: undefined,
+  renderMode: true,
 };
 
 interface DddiceSettingsProps {
@@ -109,12 +111,13 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
   useEffect(() => {
     async function initStorage() {
-      const [apiKey, room, theme, rooms, themes] = await Promise.all([
+      const [apiKey, room, theme, rooms, themes, renderMode] = await Promise.all([
         storageProvider.getStorage('apiKey'),
         storageProvider.getStorage('room'),
         storageProvider.getStorage('theme'),
         storageProvider.getStorage('rooms'),
         storageProvider.getStorage('themes'),
+        storageProvider.getStorage('render mode'),
       ]);
 
       setState((storage: IStorage) => ({
@@ -124,6 +127,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         theme,
         rooms,
         themes,
+        renderMode,
       }));
     }
 
@@ -144,9 +148,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       themes = [...themes, ..._themes];
       _themes = (await api.current.diceBox.next())?.data;
     }
-    storageProvider.setStorage({
-      themes,
-    });
+    storageProvider.setStorage({ themes });
     setState(state => ({
       ...state,
       themes,
@@ -314,7 +316,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     if (permissionProvider.canChangeRoom()) {
       storageProvider.removeStorage('room');
     }
-    storageProvider.removeStorage('rooms')
+    storageProvider.removeStorage('rooms');
     storageProvider.removeStorage('themes');
     setError(undefined);
     clearLoading();
@@ -351,40 +353,40 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
    * Render
    */
   return (
-    <div className="px-4 pt-2 pb-4 scroll">
-      <ReactTooltip effect="solid" />
+    <div className='px-4 pt-2 pb-4 scroll'>
+      <ReactTooltip effect='solid' />
       {isConnected && (
         <>
-          <div className="flex flex-row items-baseline justify-center">
+          <div className='flex flex-row items-baseline justify-center'>
             {isEnterApiKey ? (
               <span
-                className="text-gray-700 text-xs mr-auto"
+                className='text-gray-700 text-xs mr-auto'
                 onClick={() => setIsEnterApiKey(false)}
               >
-                <Back className="flex h-4 w-4 m-auto" data-tip="Back" data-place="right" />
+                <Back className='flex h-4 w-4 m-auto' data-tip='Back' data-place='right' />
               </span>
             ) : (
               <a
-                className="!text-gray-700 text-xs mr-auto"
-                href="https://docs.dddice.com/guides/browser-extension.html"
-                target="_blank"
+                className='!text-gray-700 text-xs mr-auto'
+                href='https://docs.dddice.com/guides/browser-extension.html'
+                target='_blank'
               >
-                <Help className="flex h-4 w-4 m-auto" data-tip="Help" data-place="right" />
+                <Help className='flex h-4 w-4 m-auto' data-tip='Help' data-place='right' />
               </a>
             )}
-            <span className="text-gray-700 text-xs ml-auto cursor-pointer" onClick={onSignOut}>
-              <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
+            <span className='text-gray-700 text-xs ml-auto cursor-pointer' onClick={onSignOut}>
+              <LogOut className='flex h-4 w-4 m-auto' data-tip='Logout' data-place='left' />
             </span>
           </div>
         </>
       )}
-      <div className="flex flex-col items-center justify-center">
-        <img src={imageLogo} alt="dddice" />
-        <span className="text-white text-lg">dddice</span>
+      <div className='flex flex-col items-center justify-center'>
+        <img src={imageLogo} alt='dddice' />
+        <span className='text-white text-lg'>dddice</span>
       </div>
       {error && (
-        <div className="text-gray-700 mt-4">
-          <p className="text-center text-neon-red">{error}</p>
+        <div className='text-gray-700 mt-4'>
+          <p className='text-center text-neon-red'>{error}</p>
         </div>
       )}
       {isEnterApiKey ? (
@@ -393,9 +395,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         isConnected && (
           <>
             {isLoading ? (
-              <div className="flex flex-col justify-center text-gray-700 mt-4">
-                <Loading className="flex h-10 w-10 animate-spin-slow m-auto" />
-                <div className="flex m-auto">{loadingMessage}</div>
+              <div className='flex flex-col justify-center text-gray-700 mt-4'>
+                <Loading className='flex h-10 w-10 animate-spin-slow m-auto' />
+                <div className='flex m-auto'>{loadingMessage}</div>
               </div>
             ) : (
               <>
@@ -424,6 +426,19 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
                       disabled={!permissionProvider.canChangeRoom()}
                     />
                     <Theme theme={state.theme} onSwitchTheme={onSwitchTheme} />
+                    <div className='py-3 flex items-center justify-between'>
+                      <h3 className='text-lg font-bold text-gray-300 flex-1'>Render Dice</h3>
+                      <div>
+                        <Toggle
+                          value={state.renderMode}
+                          onChange={async value => {
+                            setState(state => ({ ...state, renderMode: value }));
+                            await storageProvider.setStorage({ 'render mode': value });
+                            sdkBridge.reloadDiceEngine();
+                          }}
+                        />
+                      </div>
+                    </div>
                   </>
                 )}
               </>
@@ -432,17 +447,17 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         )
       )}
       {!isConnected && (
-        <div className="flex justify-center text-gray-700 mt-4">
-          <span className="text-center text-gray-300">
+        <div className='flex justify-center text-gray-700 mt-4'>
+          <span className='text-center text-gray-300'>
             Not connected. Please navigate to a supported VTT.
           </span>
         </div>
       )}
-      <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
+      <p className='border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center'>
         {isConnected && (
           <>
-            <span className="text-gray-300">Connected to {vtt}</span>
-            <span className="text-gray-700">{' | '}</span>
+            <span className='text-gray-300'>Connected to {vtt}</span>
+            <span className='text-gray-700'>{' | '}</span>
           </>
         )}
         dddice {process.env.VERSION}
