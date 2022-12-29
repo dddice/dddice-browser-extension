@@ -7,7 +7,7 @@
   "scripts": {
     "build": "./build.sh",
     "lint": "eslint .",
-    "start": "parcel watch src/manifest.json --host localhost",
+    "start": "parcel watch src/manifest.json --host localhost --no-hmr",
     "start:firefox": "web-ext run --source-dir ./src"
   },
   "dependencies": {

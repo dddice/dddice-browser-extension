@@ -107,7 +107,8 @@ export async function convertInlineRollToDddiceRoll(equation, result) {
       sign = 1;
     } else if (term === '-') {
       sign = -1;
-    } else {
+    } else if (!isNaN(sign * parseInt(term))) {
+      log.debug('bad mod?', term, parseInt(term));
       dice.push({
         theme,
         type: 'mod',

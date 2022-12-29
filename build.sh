@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-command="parcel watch src/manifest.json --no-hmr"
+command="parcel watch src/manifest.json --no-hmr --no-cache"
 log="prog.log"
 match="Built"
 

@@ -260,9 +260,10 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       [_, equation, result] = rollNode
                         .getAttribute('title')
                         .replace(/\[.*?]/g, '')
-                        .match(/rolling ([%*+\-/^.0-9dkh]*).* = (.*)/i) ?? [null, null, null];
+                        .match(/rolling ([%*+\-/^.0-9dkh()]*).* = (.*)/i) ?? [null, null, null];
 
                       if (equation && result) {
+                        log.debug('convert equation', equation);
                         dice = await convertInlineRollToDddiceRoll(equation, result);
                         await rollCreate(dice, external_id, node, equation);
                       }
@@ -323,7 +324,7 @@ function initializeSDK() {
         // clear the board
         if (canvasElement) canvasElement.remove();
         // disconnect from echo
-        dddice.api.connection.disconnect();
+        if (dddice.api?.connection) dddice.api.connection.disconnect();
         // stop the animation loop
         dddice.stop();
       }

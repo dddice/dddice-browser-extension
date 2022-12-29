@@ -26,7 +26,6 @@
     }
   ],
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://cdn.dddice.com/*"],
   "web_accessible_resources": [
     {
       "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
