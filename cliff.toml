@@ -28,7 +28,10 @@ body = """
 trim = false
 # changelog footer
 footer = """
-Download the browser extension here 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
+Install the browser extension for 👇
+
+* Chrome 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
+* Opera 👉 https://addons.opera.com/en/extensions/details/dddice/
 """
 
 [git]
