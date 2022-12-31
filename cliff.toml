@@ -10,10 +10,10 @@ Features, fixes, and enhancements for dddice.\n
 # https://tera.netlify.app/docs/#introduction
 body = """
 {% if version %}\
-    ## {{ version }}
-    _Released {{ timestamp | date(format="%Y-%m-%d") }}_
+## {{ version }}
+_Released {{ timestamp | date(format="%Y-%m-%d") }}_
 {% else %}\
-    ## [unreleased]
+## [unreleased]
 {% endif %}\
 
 {% for group, commits in commits | group_by(attribute="group") %}
