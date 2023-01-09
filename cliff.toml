@@ -28,9 +28,10 @@ _Released {{ timestamp | date(format="%Y-%m-%d") }}_
 trim = false
 # changelog footer
 footer = """
-Install the browser extension for 👇
+Install the browser extension for
 
 * Chrome 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
+* Edge 👉 https://microsoftedge.microsoft.com/addons/detail/dddice/lphfbgpflpoenhfbffkmpjpepmcpcnnj
 * Opera 👉 https://addons.opera.com/en/extensions/details/dddice/
 """
 
