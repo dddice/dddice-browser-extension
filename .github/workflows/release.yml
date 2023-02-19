@@ -15,8 +15,8 @@ on:
         description: 'Chrome Webstore'
         default: true
         type: boolean
-      opera:
-        description: 'Opera Addins Store'
+      edge:
+        description: 'Edge Add-ons Store'
         default: true
         type: boolean
       force:
@@ -166,3 +166,24 @@ jobs:
           WEXT_SHIPIT_OPERA_PASSWORD: ${{ secrets.OPERA_PASSWORD }}
         run: |
           npx @wext/shipit opera dist
+
+  edge:
+    if: inputs.edge == true
+    name: Upload to Opera Addons Store
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+
+      - name: Publish Edge
+        uses: wdzeng/edge-addon@v1
+        with:
+          product-id: '4b7d0dc8-f01b-4136-bccd-ad6e23731042'
+          zip-path: './dddice-browser-extension.zip'
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+          access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
