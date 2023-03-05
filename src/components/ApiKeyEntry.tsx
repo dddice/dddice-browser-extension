@@ -29,7 +29,7 @@ const ApiKeyEntry = (props: ISplash) => {
   const checkKeyValid = useCallback(async apiKey => {
     try {
       setIsLoading(true);
-      const api = new ThreeDDiceAPI(apiKey);
+      const api = new ThreeDDiceAPI(apiKey, 'browser extension');
       const user: IUser = (await api.user.get()).data;
       onSuccess(apiKey, user);
       setIsLoading(false);

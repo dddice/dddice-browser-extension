@@ -27,7 +27,7 @@ enum RollMessageType {
   DnD5e,
 }
 
-const log = createLogger('roll20');
+const log = createLogger('Roll20');
 
 log.info('DDDICE ROLL20');
 
@@ -199,8 +199,8 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                 e.target.innerHTML = `joining room...`;
                 let api;
                 if (!dddice?.api) {
-                  const apiKey = (await new ThreeDDiceAPI().user.guest()).data;
-                  api = new ThreeDDiceAPI(apiKey);
+                  const apiKey = (await new ThreeDDiceAPI().user.guest(), 'Roll20').data;
+                  api = new ThreeDDiceAPI(apiKey, 'Roll20');
                   await setStorage({ apiKey });
                 } else {
                   api = dddice.api;
@@ -339,7 +339,7 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice(canvasElement, apiKey);
+        dddice = new ThreeDDice(canvasElement, apiKey, 'Roll20');
         dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
         dddice.start();
         if (room) {
@@ -350,7 +350,7 @@ function initializeSDK() {
         }
       } else {
         dddice = new ThreeDDice();
-        dddice.api = new ThreeDDiceAPI(apiKey);
+        dddice.api = new ThreeDDiceAPI(apiKey, 'Roll20');
         if (room) {
           dddice.api.connect(room.slug);
         }

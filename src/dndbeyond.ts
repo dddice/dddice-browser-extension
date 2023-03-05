@@ -499,7 +499,7 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice(canvasElement, apiKey);
+        dddice = new ThreeDDice(canvasElement, apiKey, 'D&D Beyond');
         dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
         dddice.start();
         if (room) {
@@ -511,7 +511,7 @@ function initializeSDK() {
       } else {
         log.debug('in render mode off');
         dddice = new ThreeDDice();
-        dddice.api = new ThreeDDiceAPI(apiKey);
+        dddice.api = new ThreeDDiceAPI(apiKey, 'D&D Beyond');
         if (room) {
           dddice.api.connect(room.slug);
         }
