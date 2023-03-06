@@ -169,7 +169,7 @@ jobs:
 
   edge:
     if: inputs.edge == true
-    name: Upload to Opera Addons Store
+    name: Upload to Edge Addons Store
     needs: release
     runs-on: ubuntu-latest
     steps:
