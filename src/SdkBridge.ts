@@ -4,14 +4,14 @@ import { ITheme } from 'dddice-js';
 
 export default class SdkBridge {
   reloadDiceEngine() {
-    chrome.tabs.query({},function (tabs) {
-      tabs.forEach((tab)=>chrome.tabs.sendMessage(tab.id, { type: 'reloadDiceEngine' }));
+    chrome.tabs.query({}, function (tabs) {
+      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'reloadDiceEngine' }));
     });
   }
 
   preloadTheme(theme: ITheme) {
     chrome.tabs.query({}, function (tabs) {
-      tabs.forEach((tab)=>chrome.tabs.sendMessage(tab.id, { type: 'preloadTheme', theme }));
+      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'preloadTheme', theme }));
     });
   }
 
