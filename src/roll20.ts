@@ -17,7 +17,7 @@ import {
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import './dndbeyond.css';
 import './index.css';
-import { IStorage } from './DddiceSettings';
+import notify from './utils/notify';
 
 enum RollMessageType {
   not_a_roll,
@@ -55,7 +55,7 @@ async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element,
       const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
       node.setAttribute('data-dddice-roll-uuid', roll.uuid);
     } catch (e) {
-      log.error(e);
+      notify(`${e.response?.data?.data?.message ?? e}`);
       node.classList.remove('hidden');
     }
   } else {
@@ -339,7 +339,7 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice(canvasElement, apiKey, 'Roll20');
+        dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'Roll20');
         dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
         dddice.start();
         if (room) {

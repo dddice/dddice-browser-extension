@@ -333,7 +333,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   const createGuestAccountIfNeeded = useCallback(async () => {
     if (!state.apiKey || !api.current) {
       try {
-        const apiKey = (await new ThreeDDiceAPI().user.guest(), 'browser extension').data;
+        const apiKey = (await new ThreeDDiceAPI(undefined, 'browser extension').user.guest()).data;
         api.current = new ThreeDDiceAPI(apiKey, 'browser extension');
         setState((storage: IStorage) => ({
           ...storage,

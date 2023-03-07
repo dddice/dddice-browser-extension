@@ -1,12 +1,15 @@
 /** @format */
 
+import './index.css';
+import './dndbeyond.css';
+
 import createLogger from './log';
 import { getStorage, migrateStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
-import './index.css';
-import './dndbeyond.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
+
+import notify from './utils/notify';
 
 const log = createLogger('d&db');
 log.info('DDDICE D&D BEYOND');
@@ -292,8 +295,12 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
     });
   }
 
-  await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-  await dddice.api.roll.create(dice, { operator });
+  try {
+    await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+    await dddice.api.roll.create(dice, { operator });
+  } catch (e) {
+    notify(`${e.response?.data?.data?.message ?? e}`);
+  }
 }
 
 /**
@@ -499,7 +506,7 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice(canvasElement, apiKey, 'D&D Beyond');
+        dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'D&D Beyond');
         dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
         dddice.start();
         if (room) {
