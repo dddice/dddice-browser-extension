@@ -46,7 +46,7 @@
     "dice",
     "browser"
   ],
-  "license": "ISC",
+  "license": "MIT",
   "lint-staged": {
     "{**/*,*}.{css,json,html}": [
       "prettier --write"
