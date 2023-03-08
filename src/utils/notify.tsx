@@ -28,7 +28,7 @@ notificationElement.style.zIndex = '100001';
 notificationElement.style.opacity = '100';
 notificationElement.style.height = '100vh';
 notificationElement.style.width = '100vw';
-notificationElement.style.fontSize = '16px';
+notificationElement.className = 'dddice';
 
 document.body.appendChild(notificationElement);
 const root = ReactDOM.createRoot(document.getElementById('dddice-notifications'));
