@@ -26,7 +26,7 @@ const DEFAULT_THEME = 'dddice-standard';
  */
 async function init() {
   if (
-    /.*\/(characters|encourner-builder|combat-tracker|encounters)\/.*/.test(window.location.href)
+    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+)/.test(window.location.pathname)
   ) {
     log.debug('init');
     // add canvas element to document
