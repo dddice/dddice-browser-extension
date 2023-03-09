@@ -14,21 +14,21 @@ const Notification = (props: INotification) => {
   return (
     <div
       className={classNames(
-        'font-sans flex flex-col items-center mx-auto w-96 pointer-events-auto !p-2 rounded-lg',
+        'font-sans flex flex-col items-center mx-auto w-96 pointer-events-auto !p-2 rounded-lg box-border',
         messages.length > 0 && 'bg-gray-900 bg-opacity-60',
       )}
     >
       {messages.map((message, n) => (
         <span
           className={classNames(
-            'flex rounded-lg mx-auto text-sm text-white bg-gray-700 !p-2 my-1 w-full items-start',
+            'flex rounded-lg mx-auto text-sm text-white bg-gray-700 !p-2 my-1 w-full items-start box-border',
           )}
           key={n}
         >
-          <span className="text-error pb-0.5 m-0.5 mr-1">❌</span>
-          <span className="mr-auto m-0.5">{message}</span>
+          <span className="text-error pb-0.5 m-0.5 mr-1 box-border">❌</span>
+          <span className="mr-auto m-0.5 box-border">{message}</span>
           <button
-            className="text-gray-300 m-0.5 py-0.5 px-1"
+            className="bg-transparent text-gray-300 m-0.5 py-0.5 px-1 box-border"
             onClick={() => {
               onRemoveMessage(n);
             }}

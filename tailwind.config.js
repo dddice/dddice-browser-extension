@@ -39,6 +39,7 @@ const config = {
       // different root text sizes and this makes shared elements look different if rem is
       // used, as is default for tailwinds
       fontSize: {
+        xxs: ['8px','12px'],
         xs: ['12px','16px'],
         sm: ['14px','20px'],
         md: ['16px','24px'],

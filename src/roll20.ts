@@ -41,25 +41,36 @@ function init() {
   if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
 }
 
-async function pickUpRolls() {
-  const room = await getStorage('room');
-  await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-}
-
 async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
   const operator = convertOperators(equation);
+  const room = await getStorage('room');
 
   if (dice.length > 0) {
     log.info('the die is cast', equation);
-    try {
-      const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
-      node.setAttribute('data-dddice-roll-uuid', roll.uuid);
-    } catch (e) {
-      notify(`${e.response?.data?.data?.message ?? e}`);
+    if (!dddice?.api) {
+      notify(
+        `dddice extension hasn't been set up yet. Please open the the extension pop up via the extensions menu`,
+      );
       node.classList.remove('hidden');
+      removeLoadingMessage();
+    } else if (!room?.slug) {
+      notify(
+        'No dddice room has been selected. Please open the dddice extension pop up and select a room to roll in',
+      );
+      node.classList.remove('hidden');
+      removeLoadingMessage();
+    } else {
+      try {
+        await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+        const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
+        node.setAttribute('data-dddice-roll-uuid', roll.uuid);
+      } catch (e) {
+        console.error(e);
+        notify(`${e.response?.data?.data?.message ?? e}`);
+        node.classList.remove('hidden');
+        removeLoadingMessage();
+      }
     }
-  } else {
-    node.classList.remove('hidden');
   }
 }
 
@@ -233,7 +244,6 @@ function watchForRollToMake(mutations: MutationRecord[]) {
             if (rollMessageType && !node.classList.contains('dddiceRoll')) {
               log.info('found a roll', node);
               node.classList.add('hidden');
-              await pickUpRolls();
               addLoadingMessage();
               external_id = node.getAttribute('data-messageid');
 
@@ -339,20 +349,30 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'Roll20');
-        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-        dddice.start();
-        if (room) {
-          dddice.connect(room.slug);
+        try {
+          dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'Roll20');
+          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+          dddice.start();
+          if (room) {
+            dddice.connect(room.slug);
+          }
+        } catch (e) {
+          console.error(e);
+          notify(`${e.response?.data?.data?.message ?? e}`);
         }
         if (theme) {
           preloadTheme(theme);
         }
       } else {
-        dddice = new ThreeDDice();
-        dddice.api = new ThreeDDiceAPI(apiKey, 'Roll20');
-        if (room) {
-          dddice.api.connect(room.slug);
+        try {
+          dddice = new ThreeDDice();
+          dddice.api = new ThreeDDiceAPI(apiKey, 'Roll20');
+          if (room) {
+            dddice.api.connect(room.slug);
+          }
+        } catch (e) {
+          console.error(e);
+          notify(`${e.response?.data?.data?.message ?? e}`);
         }
         dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
           setTimeout(() => updateChat(roll), 1500),
@@ -367,7 +387,7 @@ function initializeSDK() {
 let dddice: ThreeDDice;
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (!dddice.isDiceThrowing) dddice.clear();
+  if (!dddice?.isDiceThrowing) dddice.clear();
 });
 
 // add canvas element to document

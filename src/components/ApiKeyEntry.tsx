@@ -74,10 +74,10 @@ const ApiKeyEntry = (props: ISplash) => {
       </form>
 
       {isLoading && (
-        <span className="pt-2 text-center block text-gray-300 text-xs">Connecting ...</span>
+        <span className="pt-2 text-center block text-gray-300 text-xxs">Connecting ...</span>
       )}
 
-      <p className="mt-4 text-gray-200 text-xs text-center">
+      <p className="mt-4 text-gray-200 text-xxs text-center">
         Enter your{' '}
         <a
           className="!text-neon-blue !hover:text-neon-light-blue"

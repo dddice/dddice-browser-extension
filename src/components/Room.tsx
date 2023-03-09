@@ -25,7 +25,7 @@ const Room = (props: IRoomProps) => {
           <div></div>
           <div className="flex flex-row text-xl my-auto justify-center">Room</div>
           {isCopied ? (
-            <div className="text-neon-green text-xs ml-auto my-auto"> copied to clipboard</div>
+            <div className="text-neon-green text-xxs ml-auto my-auto"> copied to clipboard</div>
           ) : (
             <span
               onClick={async () => {

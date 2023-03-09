@@ -26,7 +26,9 @@ const DEFAULT_THEME = 'dddice-standard';
  */
 async function init() {
   if (
-    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+)/.test(window.location.pathname)
+    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+)/.test(
+      window.location.pathname,
+    )
   ) {
     log.debug('init');
     // add canvas element to document
@@ -295,11 +297,22 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
     });
   }
 
-  try {
-    await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-    await dddice.api.roll.create(dice, { operator });
-  } catch (e) {
-    notify(`${e.response?.data?.data?.message ?? e}`);
+  if (!dddice?.api) {
+    notify(
+      `dddice extension hasn't been set up yet. Please open the the extension pop up via the extensions menu`,
+    );
+  } else if (!room?.slug) {
+    notify(
+      'No dddice room has been selected. Please open the dddice extension pop up and select a room to roll in',
+    );
+  } else {
+    try {
+      await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+      await dddice.api.roll.create(dice, { operator });
+    } catch (e) {
+      console.error(e);
+      notify(`${e.response?.data?.data?.message ?? e}`);
+    }
   }
 }
 
@@ -486,16 +499,16 @@ function initializeSDK() {
     getStorage('render mode'),
   ]).then(([apiKey, room, theme, renderMode]) => {
     if (apiKey) {
-      log.debug('initializeSDK');
+      log.debug('initializeSDK', renderMode);
       if (dddice) {
         // clear the board
         if (canvasElement) canvasElement.remove();
         // disconnect from echo
-        dddice.api.connection.disconnect();
+        if (dddice.api?.connection) dddice.api.connection.disconnect();
         // stop the animation loop
         dddice.stop();
       }
-      if (renderMode == undefined || renderMode) {
+      if (renderMode === undefined || renderMode) {
         canvasElement = document.createElement('canvas');
         canvasElement.id = 'dddice-canvas';
         canvasElement.style.top = '0px';
@@ -506,26 +519,37 @@ function initializeSDK() {
         canvasElement.style.height = '100vh';
         canvasElement.style.width = '100vw';
         document.body.appendChild(canvasElement);
-        dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'D&D Beyond');
-        dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
-        dddice.start();
-        if (room) {
-          dddice.connect(room.slug);
+        try {
+          dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'D&D Beyond');
+          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+          dddice.start();
+          if (room) {
+            dddice.connect(room.slug);
+          }
+        } catch (e) {
+          console.error(e);
+          notify(`${e.response?.data?.data?.message ?? e}`);
         }
         if (theme) {
           preloadTheme(theme);
         }
       } else {
-        log.debug('in render mode off');
-        dddice = new ThreeDDice();
-        dddice.api = new ThreeDDiceAPI(apiKey, 'D&D Beyond');
-        if (room) {
-          dddice.api.connect(room.slug);
+        try {
+          dddice = new ThreeDDice();
+          dddice.api = new ThreeDDiceAPI(apiKey, 'D&D Beyond');
+          if (room) {
+            dddice.api.connect(room.slug);
+          }
+        } catch (e) {
+          console.error(e);
+          notify(`${e.response?.data?.data?.message ?? e}`);
         }
         dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
           setTimeout(() => updateChat(roll), 1500),
         );
       }
+    } else {
+      log.debug('no api key');
     }
   });
 }

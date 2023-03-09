@@ -31,7 +31,7 @@ const DddiceButton = props => {
         <span
           className={classNames(
             'flex flex-1 font-bold justify-center',
-            size === 'small' ? 'text-xs p-1' : 'text-sm lg:text-md p-3',
+            size === 'small' ? 'text-xxs p-1' : 'text-xs lg:text-md p-3',
             isSecondary ? 'text-neon-blue' : 'text-neon-yellow',
           )}
         >

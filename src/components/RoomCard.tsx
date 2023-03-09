@@ -38,7 +38,7 @@ const RoomCard = (props: IRoomCardProps) => {
             )}
             data-tip={`${room.participants.length - 4} more`}
           >
-            <span className="text-white relative z-10 hover:z-20 rounded-full border-2 border-solid flex items-center justify-center font-bold bg-gray-800 cursor-pointer w-8 h-8 lg:w-10 lg:h-10 text-xs lg:text-md">
+            <span className="text-white relative z-10 hover:z-20 rounded-full border-2 border-solid flex items-center justify-center font-bold bg-gray-800 cursor-pointer w-8 h-8 lg:w-10 lg:h-10 text-xxs lg:text-md">
               {'+'}
             </span>
           </span>
@@ -55,7 +55,7 @@ const RoomCard = (props: IRoomCardProps) => {
             >
               <span
                 data-tip={participant.username}
-                className="text-white relative z-10 hover:z-20 rounded-full border-2 border-solid flex items-center justify-center font-bold bg-gray-800 cursor-pointer w-8 h-8 lg:w-10 lg:h-10 text-xs lg:text-md"
+                className="text-white relative z-10 hover:z-20 rounded-full border-2 border-solid flex items-center justify-center font-bold bg-gray-800 cursor-pointer w-8 h-8 lg:w-10 lg:h-10 text-xxs lg:text-md"
                 style={{
                   borderColor: participant.color,
                 }}

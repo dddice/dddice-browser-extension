@@ -352,28 +352,28 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
    * Render
    */
   return (
-    <div className="px-4 pt-2 pb-4 scroll !font-sans !text-sm">
+    <div className="px-4 pt-2 pb-4 scroll !font-sans !text-xs">
       <ReactTooltip effect="solid" />
       {isConnected && (
         <>
           <div className="flex flex-row items-baseline justify-center">
             {isEnterApiKey ? (
               <span
-                className="text-gray-700 text-xs mr-auto"
+                className="text-gray-700 text-xxs mr-auto"
                 onClick={() => setIsEnterApiKey(false)}
               >
                 <Back className="flex h-4 w-4 m-auto" data-tip="Back" data-place="right" />
               </span>
             ) : (
               <a
-                className="!text-gray-700 text-xs mr-auto"
+                className="!text-gray-700 text-xxs mr-auto"
                 href="https://docs.dddice.com/guides/browser-extension.html"
                 target="_blank"
               >
                 <Help className="flex h-4 w-4 m-auto" data-tip="Help" data-place="right" />
               </a>
             )}
-            <span className="text-gray-700 text-xs ml-auto cursor-pointer" onClick={onSignOut}>
+            <span className="text-gray-700 text-xxs ml-auto cursor-pointer" onClick={onSignOut}>
               <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
             </span>
           </div>
@@ -452,7 +452,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
           </span>
         </div>
       )}
-      <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xs text-center">
+      <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xxs text-center">
         {isConnected && (
           <>
             <span className="text-gray-300">Connected to {vtt}</span>
