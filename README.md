@@ -1,13 +1,15 @@
 # dddice Browser Extension
 
 Roll 3D dice from your favorite VTT! Integrates [dddice](https://dddice.com) with browser-based virtual tabletops,
-providing you with a seamless dice rolling experience. Use dddice to overlay dice on your stream or simply share the fun
+providing you with a seamless dice rolling experience. Use dddice to overlay dice on your stream, or simply share the fun
 of dice rolling in a private room.
 
 Supports:
 
-* [D&DBeyond](https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem)
-* [Roll20](https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem)
+* D&D Beyond
+* Roll20
+* Dungeon Master's Vault
+
 
 ## Installation
 
@@ -34,6 +36,28 @@ npm run start
 In Chrome, navigate to `chrome://extensions/` and toggle **Developer Mode** in the upper-right corner.
 
 Click **Load unpacked** and locate the `dist/` directory that was built in this repository.
+
+In order to enable debugging messages, which show in the console, you must set the `localStorage` key `debug` to `*`. This
+can be done by entering the following code in the browser's console:
+
+```javascript
+localStorage.setItem('debug', '*');
+```
+
+If you plan on contributing your changes upstream (always appreciated!), then do the following:
+
+* To conform to our code style, either run `npx husky install` to install our git hooks, or run
+  `npx prettier src --write && npx eslint src --fix` before comitting.
+* Rebase/squash your commits to submit one clean commit.
+* Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) prefixes in your commit message. See
+  examples in our `git log`. This helps our automation update the changelog. Here's a few examples:
+  * `feat:` for new features.
+  * `fix:` for general fixes.
+  * `fix(d&db):`, `fix(roll20):` or `fix(dungeonmastersvault):` for D&D Beyond, Roll20 or Dungeon Master's Vault fixes,
+     respectively.
+
+If you have any questions at all, please join our [Discord server](https://discord.gg/VzHq5TfAr6). We'll be happy to help
+in any way we can.
 
 ## License
 
