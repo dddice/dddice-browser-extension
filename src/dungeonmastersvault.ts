@@ -395,7 +395,7 @@ window.addEventListener('resize', () => init());
 // Subscribe to any DOM mutations and re-run init. We have to
 // observe the `app` div because the tables don't have IDs.
 const observer = new MutationObserver(() => init());
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   observer.observe(document.getElementById('app'), {
     attributes: true,
     childList: true,

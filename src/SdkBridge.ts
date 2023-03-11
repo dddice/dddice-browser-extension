@@ -22,7 +22,7 @@ export default class SdkBridge {
       return 'D&DBeyond';
     } else if (/roll20.net/.test(tab.url)) {
       return 'Roll20';
-    } else if (/dungeonmastersvault.com/.test(tab.url)) {
+    } else if (/www.dungeonmastersvault.com/.test(tab.url)) {
       return "Dungeon Master's Vault";
     } else if (/dddice.com/.test(tab.url)) {
       return 'dddice';

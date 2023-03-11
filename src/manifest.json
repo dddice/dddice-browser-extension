@@ -33,7 +33,7 @@
     {
       "js": ["./dungeonmastersvault.ts"],
       "css": ["./dungeonmastersvault.css"],
-      "matches": ["*://*.dungeonmastersvault.com/pages/dnd/5e/*"],
+      "matches": ["*://www.dungeonmastersvault.com/pages/dnd/5e/*"],
       "run_at": "document_idle"
     },
     {
