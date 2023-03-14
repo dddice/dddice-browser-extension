@@ -1,0 +1,15 @@
+/** @format */
+
+.dddice {
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
+}
+
+.integrated-dice__container * {
+  pointer-events: none;
+}

@@ -27,14 +27,14 @@ const Notification = (props: INotification) => {
         >
           <span className="text-error pb-0.5 m-0.5 mr-1 box-border">❌</span>
           <span className="mr-auto m-0.5 box-border">{message}</span>
-          <button
+          <span
             className="bg-transparent text-gray-300 m-0.5 py-0.5 px-1 box-border"
             onClick={() => {
               onRemoveMessage(n);
             }}
           >
             DISMISS
-          </button>
+          </span>
         </span>
       ))}
     </div>

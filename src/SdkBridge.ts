@@ -26,6 +26,8 @@ export default class SdkBridge {
       return "Dungeon Master's Vault";
     } else if (/dddice.com/.test(tab.url)) {
       return 'dddice';
+    } else if (/pathbuilder2e.com/.test(tab.url)) {
+      return 'Pathbuilder 2e';
     }
   }
 }

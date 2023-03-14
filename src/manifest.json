@@ -13,73 +13,47 @@
   },
   "content_scripts": [
     {
-      "js": [
-        "./dndbeyond.ts"
-      ],
-      "css": [
-        "./dndbeyond.css"
-      ],
-      "matches": [
-        "*://*.dndbeyond.com/*"
-      ],
+      "js": ["./dndbeyond.ts"],
+      "css": ["./dndbeyond.css"],
+      "matches": ["*://*.dndbeyond.com/*"],
       "run_at": "document_idle"
     },
     {
-      "js": [
-        "./roll20.ts"
-      ],
-      "css": [
-        "./roll20.css"
-      ],
-      "matches": [
-        "*://*.roll20.net/editor/"
-      ],
+      "js": ["./roll20.ts"],
+      "css": ["./roll20.css"],
+      "matches": ["*://*.roll20.net/editor/"],
       "run_at": "document_idle"
     },
     {
-      "js": [
-        "./dungeonmastersvault.ts"
-      ],
-      "css": [
-        "./dungeonmastersvault.css"
-      ],
-      "matches": [
-        "*://*.dungeonmastersvault.com/pages/dnd/5e/*"
-      ],
+      "js": ["./dungeonmastersvault.ts"],
+      "css": ["./dungeonmastersvault.css"],
+      "matches": ["*://*.dungeonmastersvault.com/pages/dnd/5e/*"],
+      "run_at": "document_idle"
+    },
+    {
+      "js": ["./pathbuilder2e.ts"],
+      "css": ["./pathbuilder2e.css"],
+      "matches": ["*://*.pathbuilder2e.com/*"],
       "run_at": "document_idle"
     }
   ],
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": [
-        "dndbeyond.css",
-        "assets/dddice-32x32.png"
-      ],
-      "matches": [
-        "https://www.dndbeyond.com/*"
-      ]
+      "resources": ["dndbeyond.css", "assets/dddice-32x32.png"],
+      "matches": ["https://www.dndbeyond.com/*"]
     },
     {
-      "resources": [
-        "roll20.css",
-        "assets/dddice-48x48.png"
-      ],
-      "matches": [
-        "https://*.roll20.net/*"
-      ]
+      "resources": ["roll20.css", "assets/dddice-48x48.png"],
+      "matches": ["https://*.roll20.net/*"]
     },
     {
-      "resources": [
-        "dungeonmastersvault.css",
-        "assets/dddice-48x48.png"
-      ],
-      "matches": [
-        "https://www.dungeonmastersvault.com/*"
-      ]
+      "resources": ["dungeonmastersvault.css", "assets/dddice-48x48.png"],
+      "matches": ["https://www.dungeonmastersvault.com/*"]
+    },
+    {
+      "resources": ["pathbuilder2e.css", "assets/dddice-48x48.png"],
+      "matches": ["https://pathbuilder2e.com/*"]
     }
   ]
 }

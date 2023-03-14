@@ -7,7 +7,7 @@
   "scripts": {
     "build": "./build.sh",
     "lint": "eslint .",
-    "start": "parcel watch src/manifest.json --host localhost --no-hmr",
+    "start": "parcel watch src/manifest.json --host localhost",
     "start:firefox": "web-ext run --source-dir ./src"
   },
   "dependencies": {
@@ -34,6 +34,8 @@
     "os-browserify": "^0.3.0",
     "parcel": "^2.7.0",
     "path-browserify": "^1.0.1",
+    "postcss": "^8.4.21",
+    "postcss-nested": "^6.0.1",
     "prettier": "^2.4.1",
     "process": "^0.11.10",
     "react": "^18.2.0",
