@@ -44,6 +44,8 @@ filter_unconventional = true
 commit_preprocessors = [
     { pattern = "\\(roll20\\)", replace = "(Roll20)"},
     { pattern = "\\(d&db\\)", replace = "(D&D Beyond)"},
+    { pattern = "\\(dmv\\)", replace = "(Dungeon Master's Vault)"},
+    { pattern = "\\(bp2e\\)", replace = "(Pathbuilder 2e)"},
     { pattern = "\\((.*(roll20|d&db).*)+\\):", replace = "(D&D Beyond & Roll20):"},
 ]
 # regex for parsing and grouping commits

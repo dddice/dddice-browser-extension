@@ -53,7 +53,7 @@ If you plan on contributing your changes upstream (always appreciated!), then do
   examples in our `git log`. This helps our automation update the changelog. Here's a few examples:
   * `feat:` for new features.
   * `fix:` for general fixes.
-  * `fix(d&db):`, `fix(roll20):` or `fix(dungeonmastersvault):` for D&D Beyond, Roll20 or Dungeon Master's Vault fixes,
+  * `fix(d&db):`, `fix(roll20):`, `fix(dmv):` or `fix(pb2e)' for D&D Beyond, Roll20, Dungeon Master's Vault or Pathbuilder 2e fixes,
      respectively.
 
 If you have any questions at all, please join our [Discord server](https://discord.gg/VzHq5TfAr6). We'll be happy to help
