@@ -11,6 +11,12 @@
       "32": "assets/dddice-32x32.png"
     }
   },
+  "icons": {
+    "16": "assets/dddice-16x16.png",
+    "32": "assets/dddice-32x32.png",
+    "48": "assets/dddice-48x48.png",
+    "128": "assets/dddice-128x128.png"
+  },
   "content_scripts": [
     {
       "js": ["./dndbeyond.ts"],
