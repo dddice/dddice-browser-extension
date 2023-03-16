@@ -95,6 +95,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
   /**
    * Connect to VTT
+   * Mount / Unmount
    */
   useEffect(() => {
     async function connect() {
@@ -156,6 +157,17 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     popLoading();
   };
 
+  const refreshRoom = useCallback(async () => {
+    if (state?.room?.slug) {
+      setLoadingMessage('refreshing room data');
+      pushLoading();
+      const room = (await api.current.room.get(state.room.slug)).data;
+      storageProvider.setStorage({ room });
+      setState(state => ({ ...state, room }));
+      popLoading();
+    }
+  }, [state?.room?.slug]);
+
   const refreshRooms = async () => {
     setLoadingMessage('Loading rooms list');
     pushLoading();
@@ -175,6 +187,10 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         try {
           if (!state.rooms || state.rooms.length === 0) {
             await refreshRooms();
+          }
+
+          if (state.room) {
+            await refreshRoom();
           }
 
           if (!state.themes || state.themes.length === 0) {
