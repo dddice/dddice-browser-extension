@@ -13,7 +13,8 @@ Supports:
 
 ## Installation
 
-Install this extension for [Chrome](https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem)
+Install this extension for [Chrome](https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem) or
+[Edge](https://microsoftedge.microsoft.com/addons/detail/dddice/lphfbgpflpoenhfbffkmpjpepmcpcnnj).
 
 ## Development
 
@@ -33,7 +34,8 @@ npm i
 npm run start
 ```
 
-In Chrome, navigate to `chrome://extensions/` and toggle **Developer Mode** in the upper-right corner.
+In Chrome, navigate to `chrome://extensions/` (`edge://extensions` in Edge) and toggle **Developer Mode** in the
+upper-right corner (bottom-left in Edge).
 
 Click **Load unpacked** and locate the `dist/` directory that was built in this repository.
 
@@ -53,8 +55,8 @@ If you plan on contributing your changes upstream (always appreciated!), then do
   examples in our `git log`. This helps our automation update the changelog. Here's a few examples:
   * `feat:` for new features.
   * `fix:` for general fixes.
-  * `fix(d&db):`, `fix(roll20):`, `fix(dmv):` or `fix(pb2e)' for D&D Beyond, Roll20, Dungeon Master's Vault or Pathbuilder 2e fixes,
-     respectively.
+  * `fix(d&db):`, `fix(roll20):`, `fix(dmv):` or `fix(pb2e):` for D&D Beyond, Roll20, Dungeon Master's Vault, or
+     Pathbuilder 2e fixes, respectively.
 
 If you have any questions at all, please join our [Discord server](https://discord.gg/VzHq5TfAr6). We'll be happy to help
 in any way we can.
