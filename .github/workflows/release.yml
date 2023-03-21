@@ -147,26 +147,6 @@ jobs:
           refreshToken: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
           inputFile: './dddice-browser-extension.zip'
           doPublish: true
-  opera:
-    if: inputs.opera == true
-    name: Upload to Opera Addons Store
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Restore Cache
-        uses: actions/cache@v3
-        with:
-          path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
-
-      - name: Publish Opera
-        env:
-          WEXT_SHIPIT_OPERA_EMAIL: ${{ secrets.OPERA_EMAIL }}
-          WEXT_SHIPIT_OPERA_EXTENSION_ID: ${{ secrets.OPERA_EXTENSION_ID }}
-          WEXT_SHIPIT_OPERA_PASSWORD: ${{ secrets.OPERA_PASSWORD }}
-        run: |
-          npx @wext/shipit opera dist
-
   edge:
     if: inputs.edge == true
     name: Upload to Edge Addons Store
