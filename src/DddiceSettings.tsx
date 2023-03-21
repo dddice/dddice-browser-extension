@@ -143,9 +143,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     setLoadingMessage('Loading themes (1)');
     let _themes = (await api.current.diceBox.list()).data;
 
-    const page = 2;
+    let page = 1;
     while (_themes) {
-      setLoadingMessage(`Loading themes (${page})`);
+      setLoadingMessage(`Loading themes (${page++})`);
       themes = [...themes, ..._themes];
       _themes = (await api.current.diceBox.next())?.data;
     }

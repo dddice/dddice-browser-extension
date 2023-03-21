@@ -15,8 +15,6 @@ import {
 } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
-import './dndbeyond.css';
-import './index.css';
 import notify from './utils/notify';
 
 enum RollMessageType {

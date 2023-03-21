@@ -4,8 +4,6 @@ import createLogger from './log';
 import { getStorage, migrateStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
-import './index.css';
-import './dungeonmastersvault.css';
 import imageLogo from 'url:./assets/dddice-32x32.png';
 
 import notify from './utils/notify';

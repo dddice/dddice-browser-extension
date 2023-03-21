@@ -1,8 +1,5 @@
 /** @format */
 
-import './index.css';
-import './dndbeyond.css';
-
 import createLogger from './log';
 import { getStorage, migrateStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
