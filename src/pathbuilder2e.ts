@@ -1,7 +1,5 @@
 /** @format */
 
-import './pathbuilder2e.css';
-
 import createLogger from './log';
 import { getStorage, migrateStorage } from './storage';
 import {
@@ -28,6 +26,12 @@ let canvasElement: HTMLCanvasElement;
 async function init() {
   if (/^\/(app.html)/.test(window.location.pathname)) {
     log.debug('init');
+
+    // remove their dice canvas
+    document
+      .querySelectorAll('#canvas > canvas')
+      .forEach(element => element.id !== 'dddice-canvas' && element.remove());
+
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
@@ -92,8 +96,10 @@ async function init() {
       element.addEventListener('click', damageRoll, true);
     });
 
-    resetButton.removeEventListener('click', resetRoll, true);
-    resetButton.addEventListener('click', resetRoll, true);
+    if (resetButton) {
+      resetButton.removeEventListener('click', resetRoll, true);
+      resetButton.addEventListener('click', resetRoll, true);
+    }
 
     //  click on the dice backdrop closes the dice tray
     const diceBackdrop: HTMLElement = document.getElementById('dice-backdrop') as HTMLElement;
@@ -311,7 +317,7 @@ function initializeSDK() {
           'bg-gradient-radial transition-colors duration-200 bg-center bg-cover bg-no-repeat bg-gray-700 from-gray-700 to-gray-900';
         const canvasContainer = document.getElementById('canvas');
         canvasContainer.className = 'dddice';
-        document.querySelector('#canvas > canvas').remove();
+
         document.getElementById('canvas').appendChild(canvasElement);
         try {
           dddice = new ThreeDDice().initialize(
