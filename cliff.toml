@@ -28,10 +28,12 @@ _Released {{ timestamp | date(format="%Y-%m-%d") }}_
 trim = false
 # changelog footer
 footer = """
-Install the browser extension for
+Install the browser extension from:
 
-* Chrome 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
-* Edge 👉 https://microsoftedge.microsoft.com/addons/detail/dddice/lphfbgpflpoenhfbffkmpjpepmcpcnnj
+* Chrome Web Store 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
+* Edge Add-ins Store 👉 https://microsoftedge.microsoft.com/addons/detail/dddice/lphfbgpflpoenhfbffkmpjpepmcpcnnj
+
+Opera and Brave users can install the extension from the Chrome Web Store
 """
 
 [git]
