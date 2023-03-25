@@ -120,11 +120,11 @@ function generateChatMessage(roll: IRoll) {
   );
 
   const chatMessageElement = document.createElement('div');
-  chatMessageElement.className = 'message rollresult quantumRoll dddiceRoll';
+  chatMessageElement.className = 'message rollresult dddiceRoll';
   chatMessageElement.innerHTML = `
       <div class="spacer"></div>
       <div class="avatar">
-        <img src="${imageLogo}" class="rounded-full bg-gray-700 h-8 mx-auto p-2">
+        <img src="${imageLogo}" class="rounded-full bg-gray-700 h-4 mx-auto p-1">
       </div>
       <span class="tstamp"></span><span class="by">${
         roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
