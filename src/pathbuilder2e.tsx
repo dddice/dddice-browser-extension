@@ -1,7 +1,10 @@
 /** @format */
 
+import ReactDOM from 'react-dom/client';
+import browser from 'webextension-polyfill';
+
 import createLogger from './log';
-import { getStorage, migrateStorage } from './storage';
+import { getStorage } from './storage';
 import {
   IRoll,
   ThreeDDiceRollEvent,
@@ -35,7 +38,7 @@ async function init() {
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
-      migrateStorage().then(() => initializeSDK());
+      initializeSDK();
     }
 
     const characterSheetDiceElements = document.querySelectorAll('.section-skill');
@@ -213,8 +216,8 @@ function openSkillRoll() {
       '#dice-buttons-roll div',
     ) as HTMLElement;
     diceButtonsRoll.classList.add('hidden');
-    document.getElementById('dice-title').innerHTML = '';
-    document.getElementById('dice-summary').innerHTML = '';
+    document.getElementById('dice-title').innerText = '';
+    document.getElementById('dice-summary').innerText = '';
   }
 }
 
@@ -267,11 +270,19 @@ function generateChatMessage(roll: IRoll) {
 
   const chatMessageElement = document.createElement('div');
   chatMessageElement.className = 'dice-history-item';
-  chatMessageElement.innerHTML = `${new Date().toLocaleTimeString()} <span style='color:${
-    roller.color
-  }'>${roller.username}</span>: ${roll.total_value}<br><span class="superscript-damage">${
-    roll.equation
-  }: ${diceBreakdown}</span>`;
+
+  const root = ReactDOM.createRoot(chatMessageElement);
+  root.render(
+    <>
+      {new Date().toLocaleTimeString()}{' '}
+      <span style={{ color: roller.color }}>{roller.username}</span>: {roll.total_value}
+      <br />
+      <span className="superscript-damage">
+        {roll.equation}: {diceBreakdown}
+      </span>
+    </>,
+  );
+  chatMessageElement.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
   return chatMessageElement;
 }
 
@@ -279,9 +290,9 @@ function updateChat(roll: IRoll) {
   const notificationControls = document.getElementById('dice-history');
   notificationControls.insertAdjacentElement('afterbegin', generateChatMessage(roll));
   const result = document.getElementById('dice-result');
-  result.innerHTML = `TOTAL: ${roll.total_value}`;
+  result.innerText = `TOTAL: ${roll.total_value}`;
   const canvasTotal = document.getElementById('canvas-total');
-  canvasTotal.innerHTML = `${roll.total_value}`;
+  canvasTotal.innerText = `${roll.total_value}`;
   canvasTotal.classList.add('fade');
   setTimeout(() => canvasTotal.classList.remove('fade'), 2500);
 }

@@ -19,6 +19,10 @@ on:
         description: 'Edge Add-ons Store'
         default: true
         type: boolean
+      firefox:
+        description: 'Firefox Add-ons Store'
+        default: true
+        type: boolean
       force:
         description: 'Force Release'
         default: false
@@ -43,8 +47,10 @@ jobs:
       - name: Update Version
         run: |
           npm --no-git-tag-version --allow-same-version version $VERSION
-          MANIFEST=$(cat src/manifest.json | jq ".version |= \"${VERSION/v/}\"")
-          echo "$MANIFEST" > src/manifest.json
+          MANIFEST=$(cat src/manifest_v2/manifest.json | jq ".version |= \"${VERSION/v/}\"")
+          echo "$MANIFEST" > src/manifest_v2/manifest.json
+          MANIFEST=$(cat src/manifest_v3/manifest.json | jq ".version |= \"${VERSION/v/}\"")
+          echo "$MANIFEST" > src/manifest_v3/manifest.json
 
       - name: Commit
         run: |
@@ -69,14 +75,19 @@ jobs:
       - name: Build Release
         run: |
           npm ci
-          npm run build
+          npm run build:manifest_v3
+          npm run build:manifest_v2
 
       - name: Install zip
         uses: montudor/action-zip@v1
 
-      - name: Zip output
-        run: zip -9 -qq -r ../dddice-browser-extension.zip *
-        working-directory: dist
+      - name: Zip manifest v3
+        run: zip -9 -qq -r ../dddice-browser-extension-manifest-v3.zip *
+        working-directory: manifest_v3
+
+      - name: Zip manifest v2
+        run: zip -9 -qq -r ../dddice-browser-extension-manifest-v2.zip *
+        working-directory: manifest_v2
 
       - name: Cache Files
         uses: actions/cache@v3
@@ -123,7 +134,7 @@ jobs:
           draft: false
           prerelease: false
           allowUpdates: true
-          artifacts: dddice-browser-extension.zip
+          artifacts: dddice-browser-extension-manifest-v3.zip,dddice-browser-extension-manifest-v2.zip
           token: ${{ secrets.GITHUB_TOKEN }}
 
   chrome:
@@ -145,7 +156,7 @@ jobs:
           clientId: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           clientSecret: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           refreshToken: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-          inputFile: './dddice-browser-extension.zip'
+          inputFile: './dddice-browser-extension-manifest-v3.zip'
           doPublish: true
   edge:
     if: inputs.edge == true
@@ -163,7 +174,27 @@ jobs:
         uses: wdzeng/edge-addon@v1
         with:
           product-id: '4b7d0dc8-f01b-4136-bccd-ad6e23731042'
-          zip-path: './dddice-browser-extension.zip'
+          zip-path: './dddice-browser-extension-manifest-v3.zip'
           client-id: ${{ secrets.EDGE_CLIENT_ID }}
           client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
           access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+
+  firefox:
+    if: inputs.firefox == true
+    name: Upload to Firefox Addons Store
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+
+      - uses: trmcnvn/firefox-addon@v1
+        with:
+          uuid: '{87033b3f-6fa3-4046-b74f-76053b40c231}'
+          xpi: ./dddice-browser-extension-manifest-v2.zip
+          manifest: manifest_v2/manifest.json
+          api-key: ${{ secrets.FIREFOX_API_KEY }}
+          api-secret: ${{ secrets.FIREFOX_API_SECRET }}

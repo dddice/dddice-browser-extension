@@ -1,5 +1,6 @@
 {
   "extends": "@parcel/config-webextension",
+  "bundler": "@parcel/bundler-experimental",
   "transformers": {
     "*.svg": ["...", "@parcel/transformer-svg-react"]
   },

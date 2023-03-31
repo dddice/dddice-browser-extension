@@ -1,7 +1,10 @@
 /** @format */
 
+import ReactDOM from 'react-dom/client';
+import browser from 'webextension-polyfill';
+
 import createLogger from './log';
-import { getStorage, migrateStorage } from './storage';
+import { getStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-32x32.png';
@@ -31,7 +34,7 @@ async function init() {
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
-      migrateStorage().then(() => initializeSDK());
+      initializeSDK();
     }
 
     const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
@@ -351,33 +354,39 @@ function generateChatMessage(roll: IRoll) {
   chatMessageElement.className =
     'noty_bar noty_type__alert noty_theme__valhalla noty_close_with_click animated faster bounceInUp';
   chatMessageElement.addEventListener('click', () => removeChatMessage(chatMessageElement));
-  chatMessageElement.innerHTML =
-    "    <div class='noty_body'>\n" +
-    "      <div class='dice_result '>\n" +
-    "        <div class='dice_result__info'>\n" +
-    "          <div class='dice_result__info__title'>\n" +
-    "            <span class='dice_result__info__rolldetail'>dddice: </span><span\n" +
-    `            class='dice_result__rolltype rolltype_roll' style='color:${roller.color}'>${roller.username}</span>\n` +
-    '          </div>\n' +
-    '\n' +
-    "          <div class='dice_result__info__results'>\n" +
-    '\n' +
-    `            <span class='dice-icon-die dice-icon-die--${largestDie}' alt=''></span>\n` +
-    '\n' +
-    `            <span class='dice_result__info__breakdown' title='${diceBreakdown}'>${diceBreakdown}</span>\n` +
-    '          </div>\n' +
-    `          <span class='dice_result__info__dicenotation' title='${roll.equation}'>${roll.equation}</span>\n` +
-    '        </div>\n' +
-    "        <span class='dice_result__divider dice_result__divider--'></span>\n" +
-    "        <div class='dice_result__total-container'>\n" +
-    '\n' +
-    `          <span class='dice_result__total-result dice_result__total-result-'>${
-      typeof roll.total_value === 'object' ? '⚠' : roll.total_value
-    }</span>\n` +
-    '        </div>\n' +
-    '      </div>\n' +
-    '    </div>\n' +
-    "    <div class='noty_progressbar'></div>\n";
+  const root = ReactDOM.createRoot(chatMessageElement);
+  root.render(
+    <>
+      <div className="noty_body">
+        <div className="dice_result ">
+          <div className="dice_result__info">
+            <div className="dice_result__info__title">
+              <span className="dice_result__info__rolldetail">dddice: </span>
+              <span className="dice_result__rolltype rolltype_roll" style={{ color: roller.color }}>
+                {roller.username}
+              </span>
+            </div>
+            <div className="dice_result__info__results">
+              <span className={`dice-icon-die dice-icon-die--${largestDie}`} alt="" />
+              <span className="dice_result__info__breakdown" title={diceBreakdown}>
+                {diceBreakdown}
+              </span>
+            </div>
+            <span className="dice_result__info__dicenotation" title="${roll.equation}">
+              {roll.equation}
+            </span>
+          </div>
+          <span className="dice_result__divider dice_result__divider--" />
+          <div className="dice_result__total-container">
+            <span className="dice_result__total-result dice_result__total-result-">
+              {typeof roll.total_value === 'object' ? '⚠' : roll.total_value}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="noty_progressbar" />
+    </>,
+  );
   return chatMessageElement;
 }
 
@@ -456,7 +465,7 @@ function updateChat(roll: IRoll) {
   if (document.getElementsByClassName('dice_notification_controls').length === 0) {
     const collapseButton = document.createElement('div');
     collapseButton.className = 'dice_notification_control dice_notification_controls__uncollapse';
-    collapseButton.innerHTML = '<i></i>';
+    collapseButton.appendChild(document.createElement('i'));
     collapseButton.addEventListener('click', () => {
       chatDiv.classList.toggle('uncollapse');
       chatDiv.classList.toggle('collapse');
@@ -464,7 +473,10 @@ function updateChat(roll: IRoll) {
 
     const clearAllButton = document.createElement('div');
     clearAllButton.className = 'dice_notification_control dice_notification_controls__clear';
-    clearAllButton.innerHTML = '<span>Clear All</span><i></i>';
+    const clearAllText = document.createElement('span');
+    clearAllText.innerText = 'Clear All';
+    clearAllButton.appendChild(clearAllText);
+    clearAllButton.appendChild(document.createElement('i'));
     clearAllButton.addEventListener('click', () => clearChat());
 
     const notificationControls = document.createElement('div');

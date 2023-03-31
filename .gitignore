@@ -5,3 +5,5 @@ tmp/
 node_modules/
 dist/
 .parcel-cache/
+/manifest_v2/
+/manifest_v3/

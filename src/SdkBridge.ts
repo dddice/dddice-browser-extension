@@ -16,18 +16,20 @@ export default class SdkBridge {
   }
 
   async detectPlatform() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (/dndbeyond.com/.test(tab.url)) {
-      return 'D&DBeyond';
-    } else if (/roll20.net/.test(tab.url)) {
-      return 'Roll20';
-    } else if (/www.dungeonmastersvault.com/.test(tab.url)) {
-      return "Dungeon Master's Vault";
-    } else if (/dddice.com/.test(tab.url)) {
-      return 'dddice';
-    } else if (/pathbuilder2e.com/.test(tab.url)) {
-      return 'Pathbuilder 2e';
-    }
+    return new Promise(resolve =>
+      chrome.tabs.query({ active: true, currentWindow: true }, function ([tab]) {
+        if (/dndbeyond.com/.test(tab.url)) {
+          resolve('D&DBeyond');
+        } else if (/roll20.net/.test(tab.url)) {
+          resolve('Roll20');
+        } else if (/www.dungeonmastersvault.com/.test(tab.url)) {
+          resolve("Dungeon Master's Vault");
+        } else if (/dddice.com/.test(tab.url)) {
+          resolve('dddice');
+        } else if (/pathbuilder2e.com/.test(tab.url)) {
+          resolve('Pathbuilder 2e');
+        }
+      }),
+    );
   }
 }

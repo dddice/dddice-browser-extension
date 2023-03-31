@@ -3,7 +3,6 @@
 import ReactDOM from 'react-dom/client';
 
 import Notification from '../components/Notification';
-import notification from '../components/Notification';
 
 let messages = [];
 

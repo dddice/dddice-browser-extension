@@ -1,8 +1,11 @@
 /** @format */
 
+import ReactDOM from 'react-dom/client';
+import browser from 'webextension-polyfill';
+
 import createLogger from './log';
 import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
-import { getStorage, migrateStorage, setStorage } from './storage';
+import { getStorage, setStorage } from './storage';
 import {
   IDiceRoll,
   IRoll,
@@ -85,13 +88,16 @@ function addLoadingMessage() {
 
     const chatMessageElement = document.createElement('div');
     chatMessageElement.id = 'dddice-loading-message';
-    chatMessageElement.innerHTML = `
-        <div class='spacer'></div>
-        <img src="${imageLogo}" class="rounded-full bg-gray-700 animate-pulse h-10 mx-auto mt-4 p-2">
-`;
+    const spacer = document.createElement('div');
+    spacer.className = 'spacer';
+    chatMessageElement.appendChild(spacer);
+    const image = document.createElement('img');
+    image.src = imageLogo;
+    image.className = 'rounded-full bg-gray-700 animate-pulse h-10 mx-auto mt-4 p-2';
+    chatMessageElement.appendChild(image);
 
     chatElement.appendChild(chatMessageElement);
-    chatMessageElement.scrollIntoView();
+    chatMessageElement.scrollIntoView(false);
   }
 }
 
@@ -100,47 +106,59 @@ function removeLoadingMessage() {
 }
 
 function generateChatMessage(roll: IRoll) {
-  const diceBreakdown = roll.values.reduce(
-    (prev: string, current: IRollValue) =>
-      prev +
-      (prev !== '' && current.value_to_display[0] !== '-' ? '+' : '') +
-      (current.type === 'mod'
-        ? current.value_to_display
-        : `<div class="diceroll ${translateD10xs(current.type)} ${
-            current.is_dropped ? 'dropped' : ''
-          } ">
-          <div class="dicon">
-            <div class="didroll">${
-              typeof current.value_to_display === 'object' ? '⚠' : current.value_to_display
-            }</div>
-            <div class="backing"></div>
-          </div>
-        </div>`),
-    '',
-  );
-
   const chatMessageElement = document.createElement('div');
   chatMessageElement.className = 'message rollresult dddiceRoll';
-  chatMessageElement.innerHTML = `
-      <div class="spacer"></div>
-      <div class="avatar">
-        <img src="${imageLogo}" class="rounded-full bg-gray-700 h-4 mx-auto p-1">
+  const root = ReactDOM.createRoot(chatMessageElement);
+  root.render(
+    <>
+      <div className="spacer" />
+      <div className="avatar">
+        <img src={imageLogo} className="rounded-full bg-gray-700 h-4 mx-auto p-1" />
       </div>
-      <span class="tstamp"></span><span class="by">${
-        roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
-          .username
-      }</span>
-      <div class="formula" style="margin-bottom: 3px;">rolling ${roll.equation}</div>
-      <div class="clear"></div>
-      <div class="formula formattedformula">
-      <div class="dicegrouping ui-sortable" data-groupindex="1">
-          ${diceBreakdown}
+      <span className="tstamp" />
+      <span className="by">
+        {
+          roll.room.participants.find(participant => participant.user.uuid === roll.user.uuid)
+            .username
+        }
+      </span>
+      <div className="formula" style={{ marginBottom: '3px' }}>
+        rolling {roll.equation}
       </div>
+      <div className="clear" />
+      <div className="formula formattedformula">
+        <div className="dicegrouping ui-sortable" data-groupindex="1">
+          {roll.values.map((current, i) => (
+            <>
+              {i !== 0 && current.value_to_display[0] !== '-' ? '+' : ''}
+              {current.type === 'mod' ? (
+                current.value_to_display
+              ) : (
+                <div
+                  key={i}
+                  className={`diceroll ${translateD10xs(current.type)} ${
+                    current.is_dropped ? 'dropped' : ''
+                  } `}
+                >
+                  <div className="dicon">
+                    <div className="didroll">
+                      {typeof current.value_to_display === 'object'
+                        ? '⚠'
+                        : current.value_to_display}
+                    </div>
+                    <div className="backing" />
+                  </div>
+                </div>
+              )}
+            </>
+          ))}
+        </div>
       </div>
-      <div class="clear"></div>
+      <div className="clear" />
       <strong>=</strong>
-      <div class="rolled ui-draggable ui-draggable-handle">${roll.total_value}</div>
-    </div>`;
+      <div className="rolled ui-draggable ui-draggable-handle">{roll.total_value}</div>
+    </>,
+  );
   return chatMessageElement;
 }
 
@@ -205,7 +223,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
               link.addEventListener('click', async e => {
                 e.preventDefault();
                 e.stopPropagation();
-                e.target.innerHTML = `joining room...`;
+                e.target.innerText = `joining room...`;
                 let api;
                 if (!dddice?.api) {
                   const apiKey = (await new ThreeDDiceAPI().user.guest(), 'Roll20').data;
@@ -223,7 +241,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                 await setStorage({ room });
                 initializeSDK();
                 (e.target as HTMLElement).classList.add('text-success');
-                e.target.innerHTML = `joined room ${room.name}`;
+                (e.target as HTMLElement).innerText = `joined room ${room.name}`;
               });
             }
           });
@@ -309,7 +327,12 @@ function updateChat(roll: IRoll) {
 
     const newChat = generateChatMessage(roll);
     chatElement.appendChild(newChat);
-    newChat.scrollIntoView();
+    const textChatContainer = document.getElementById('textchat');
+    // hack to scroll to bottom
+    setTimeout(
+      () => textChatContainer.scrollTo(0, textChatContainer.scrollHeight + newChat.clientHeight),
+      100,
+    );
   }
 }
 
@@ -392,7 +415,7 @@ document.addEventListener('click', () => {
 let canvasElement: HTMLCanvasElement;
 
 // init dddice object
-migrateStorage().then(() => initializeSDK());
+initializeSDK();
 
 // receive reload events from popup
 // @ts-ignore

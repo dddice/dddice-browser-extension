@@ -23,6 +23,7 @@ below.
 
 You will need [Node.js](https://nodejs.org/en/) and [NPM](https://www.npmjs.com/).
 
+### Chromium Browsers
 ``` shell
 # Clone this repository
 git clone git@github.com:dddice/dddice-browser-extension.git
@@ -30,15 +31,33 @@ git clone git@github.com:dddice/dddice-browser-extension.git
 # Install dependencies
 npm i
 
-# Start the browser extension
+# Start the browser extension for chromium browsers
 npm run start
 ```
 
 In Chrome, navigate to `chrome://extensions/` (`edge://extensions` in Edge) and toggle **Developer Mode** in the
 upper-right corner (bottom-left in Edge).
 
-Click **Load unpacked** and locate the `dist/` directory that was built in this repository.
+Click **Load unpacked** and locate the `manifest_v3/` directory that was built in this repository.
 
+### Firefox
+``` shell
+# Clone this repository
+git clone git@github.com:dddice/dddice-browser-extension.git
+
+# Install dependencies
+npm i
+
+# Start the browser extension for chromium browsers
+npm run start:firefox
+```
+
+You need the developer version of Firefox. Navigate to `about:addons/` then click the cog button
+and select "Debug Add-ons"
+
+Click **Load temporary addon** and locate the `manifest_v2/` directory that was built in this repository.
+
+### Debug Logging
 In order to enable debugging messages, which show in the console, you must set the `localStorage` key `debug` to `*`. This
 can be done by entering the following code in the browser's console:
 

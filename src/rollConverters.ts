@@ -73,7 +73,7 @@ export async function convertInlineRollToDddiceRoll(equation, result) {
   const dice = [];
   const parsedEquation = Parser.parse(equation);
   const roll20Roll = document.createElement('div');
-  roll20Roll.innerHTML = result;
+  roll20Roll.innerText = result;
 
   // extract the roll values from the message
   const values = [];

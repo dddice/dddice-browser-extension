@@ -1,5 +1,7 @@
 /** @format */
 
+import browser from 'webextension-polyfill';
+
 import { getStorage, setStorage } from './storage';
 
 export default class StorageProvider {

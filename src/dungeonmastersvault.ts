@@ -1,7 +1,9 @@
 /** @format */
 
+import browser from 'webextension-polyfill';
+
 import createLogger from './log';
-import { getStorage, migrateStorage } from './storage';
+import { getStorage } from './storage';
 import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-32x32.png';
@@ -38,7 +40,7 @@ async function init() {
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
-      migrateStorage().then(() => initializeSDK());
+      initializeSDK();
     }
 
     const characterSheetDiceElements = document.querySelectorAll('.roll-button');

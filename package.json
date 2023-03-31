@@ -5,10 +5,11 @@
   "repository": "git@github.com:dddice/dddice-browser-extension.git",
   "author": "dddice <developers@dddice.com>",
   "scripts": {
-    "build": "./build.sh",
+    "build:manifest_v3": "parcel build src/manifest_v3/manifest.json --dist-dir manifest_v3 --no-cache --no-source-maps",
+    "build:manifest_v2": "parcel build src/manifest_v2/manifest.json --dist-dir manifest_v2 --no-cache --no-source-maps",
     "lint": "eslint .",
-    "start": "parcel watch src/manifest.json --host localhost",
-    "start:firefox": "web-ext run --source-dir ./src"
+    "start": "parcel watch src/manifest_v3/manifest.json --dist-dir manifest_v3 --host localhost",
+    "start:firefox": "parcel watch src/manifest_v2/manifest.json --dist-dir manifest_v2 --host localhost"
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.2.1",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
     "@commitlint/config-conventional": "^13.2.0",
+    "@parcel/bundler-experimental": "^2.7.0",
     "@parcel/config-webextension": "^2.7.0",
     "@parcel/transformer-svg-react": "^2.7.0",
     "@parcel/validator-typescript": "^2.7.0",
