@@ -2,7 +2,7 @@
   "name": "dddice",
   "description": "Roll 3D digital dice using your favorite browser-based VTT.",
   "manifest_version": 2,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "browser_action": {
     "default_title": "dddice",
     "default_popup": "../index.html",
@@ -19,31 +19,60 @@
   },
   "content_scripts": [
     {
-      "js": ["../dndbeyond.tsx"],
-      "css": ["../dndbeyond.css"],
-      "matches": ["*://*.dndbeyond.com/*"],
+      "js": [
+        "../dndbeyond.tsx"
+      ],
+      "css": [
+        "../dndbeyond.css"
+      ],
+      "matches": [
+        "*://*.dndbeyond.com/*"
+      ],
       "run_at": "document_idle"
     },
     {
-      "js": ["../roll20.tsx"],
-      "css": ["../roll20.css"],
-      "matches": ["*://*.roll20.net/editor/"],
+      "js": [
+        "../roll20.tsx"
+      ],
+      "css": [
+        "../roll20.css"
+      ],
+      "matches": [
+        "*://*.roll20.net/editor/"
+      ],
       "run_at": "document_idle"
     },
     {
-      "js": ["../dungeonmastersvault.ts"],
-      "css": ["../dungeonmastersvault.css"],
-      "matches": ["*://www.dungeonmastersvault.com/pages/dnd/5e/*"],
+      "js": [
+        "../dungeonmastersvault.ts"
+      ],
+      "css": [
+        "../dungeonmastersvault.css"
+      ],
+      "matches": [
+        "*://www.dungeonmastersvault.com/pages/dnd/5e/*"
+      ],
       "run_at": "document_idle"
     },
     {
-      "js": ["../pathbuilder2e.tsx"],
-      "css": ["../pathbuilder2e.css"],
-      "matches": ["*://*.pathbuilder2e.com/*"],
+      "js": [
+        "../pathbuilder2e.tsx"
+      ],
+      "css": [
+        "../pathbuilder2e.css"
+      ],
+      "matches": [
+        "*://*.pathbuilder2e.com/*"
+      ],
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "tabs", "https://cdn.dddice.com/*", "https://dddice.com/*"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "https://cdn.dddice.com/*",
+    "https://dddice.com/*"
+  ],
   "web_accessible_resources": [
     "../dndbeyond.css",
     "../assets/dddice-32x32.png",
