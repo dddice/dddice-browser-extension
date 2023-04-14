@@ -88,6 +88,7 @@ function addLoadingMessage() {
 
     const chatMessageElement = document.createElement('div');
     chatMessageElement.id = 'dddice-loading-message';
+    chatMessageElement.className = 'dddice';
     const spacer = document.createElement('div');
     spacer.className = 'spacer';
     chatMessageElement.appendChild(spacer);
@@ -110,10 +111,10 @@ function generateChatMessage(roll: IRoll) {
   chatMessageElement.className = 'message rollresult dddiceRoll';
   const root = ReactDOM.createRoot(chatMessageElement);
   root.render(
-    <>
+    <div className="dddice">
       <div className="spacer" />
       <div className="avatar">
-        <img src={imageLogo} className="rounded-full bg-gray-700 h-4 mx-auto p-1" />
+        <img src={imageLogo} className="rounded-full bg-gray-700 h-16 mx-auto p-1" />
       </div>
       <span className="tstamp" />
       <span className="by">
@@ -157,7 +158,7 @@ function generateChatMessage(roll: IRoll) {
       <div className="clear" />
       <strong>=</strong>
       <div className="rolled ui-draggable ui-draggable-handle">{roll.total_value}</div>
-    </>,
+    </div>,
   );
   return chatMessageElement;
 }

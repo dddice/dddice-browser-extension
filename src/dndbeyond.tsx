@@ -136,9 +136,18 @@ function onPointerOver() {
 
     const node = document.createElement('div');
     node.id = overlayId;
-    node.className = 'fixed z-10 top-0 left-0 flex items-center justify-center text-sm rounded';
+    node.className = 'dddice';
+    node.style.position = 'fixed';
+    node.style.top = `0px`;
+    node.style.left = `0px`;
     node.style.marginTop = `${top}px`;
     node.style.marginLeft = `${right}px`;
+    node.style.zIndex = '10';
+
+    const node2 = document.createElement('div');
+    node2.className = 'flex items-center justify-center text-sm rounded';
+
+    node.appendChild(node2);
 
     const img = document.createElement('img');
     img.src = imageLogo;
@@ -150,25 +159,25 @@ function onPointerOver() {
     buttonRoll.className =
       'h-8 w-8 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-80';
     buttonRoll.dataset.text = text;
-    node.appendChild(buttonRoll);
+    node2.appendChild(buttonRoll);
 
     if (dieType === 'd20') {
       const buttonAdv = document.createElement('button');
       buttonAdv.addEventListener('pointerup', onPointerUp(overlayId, { k: 'h1' }));
       buttonAdv.className =
-        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-sans font-bold';
       buttonAdv.textContent = 'adv';
       buttonAdv.dataset.text = text;
-      node.appendChild(buttonAdv);
+      node2.appendChild(buttonAdv);
 
       const buttonDis = document.createElement('button');
       buttonDis.addEventListener('pointerup', onPointerUp(overlayId, { k: 'l1' }));
       buttonDis.className =
-        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-sans font-bold';
       buttonDis.textContent = 'dis';
       buttonDis.dataset.text = text;
 
-      node.appendChild(buttonDis);
+      node2.appendChild(buttonDis);
     } else {
       const buttonCrit = document.createElement('button');
       buttonCrit.addEventListener('pointerup', onPointerUp(overlayId, {}, true));
@@ -176,7 +185,7 @@ function onPointerOver() {
         'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
       buttonCrit.textContent = 'crit';
       buttonCrit.dataset.text = text;
-      node.appendChild(buttonCrit);
+      node2.appendChild(buttonCrit);
     }
 
     document.body.appendChild(node);
