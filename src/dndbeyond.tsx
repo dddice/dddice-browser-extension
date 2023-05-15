@@ -5,8 +5,8 @@ import ReactDOM from 'react-dom/client';
 import browser from 'webextension-polyfill';
 
 import createLogger from './log';
-import { getStorage } from './storage';
-import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI } from 'dddice-js';
+import { getStorage, setStorage } from './storage';
+import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI, IUser } from 'dddice-js';
 
 import imageLogo from 'url:./assets/dddice-32x32.png';
 
@@ -22,6 +22,7 @@ let canvasElement: HTMLCanvasElement;
 let customRoll: Record<string, number> = {};
 const DEFAULT_THEME = 'dddice-standard';
 let characterId;
+let user: IUser;
 
 /**
  * Initialize listeners on all attacks
@@ -43,7 +44,27 @@ async function init() {
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
-      initializeSDK();
+      await initializeSDK();
+    }
+
+    const room = await getStorage('room');
+    if (!user) {
+      user = (await dddice.api.user.get()).data;
+    }
+    const characterName = document.querySelector(
+      '.ddbc-character-tidbits__heading h1',
+    )?.textContent;
+
+    const userParticipant = room.participants.find(
+      ({ user: { uuid: participantUuid } }) => participantUuid === user.uuid,
+    );
+
+    if (characterName && userParticipant.username != characterName) {
+      userParticipant.username = characterName;
+      setStorage({ room });
+      await dddice.api.room.updateParticipant(room.slug, userParticipant.id, {
+        username: characterName,
+      });
     }
 
     const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
@@ -139,50 +160,58 @@ function traverseToParentWithClass(me: HTMLElement, classNames: string[], maxLev
 function getRollContext(div: HTMLDivElement) {
   const grandparent = div.parentElement.parentElement;
   // skills
-  const skillName = grandparent.querySelector('.ct-skills__col--skill');
+  const skillName = grandparent.querySelector('.ct-skills__col--skill')?.textContent;
   // ability rolls
   const abilityName = grandparent.querySelector(
     '.ddbc-ability-summary__heading .ddbc-ability-summary__abbr',
-  );
+  )?.textContent;
 
   // saves
-  const saveName = grandparent.querySelector('.ddbc-saving-throws-summary__ability-name');
+  const saveName = grandparent.querySelector(
+    '.ddbc-saving-throws-summary__ability-name',
+  )?.textContent;
 
   // initiative
-  const initiative = div.parentElement.querySelector('h2');
+  const initiative = grandparent.classList.contains('ct-combat-mobile__extra--initiative')
+    ? 'Initiative'
+    : div.parentElement.querySelector('h2')?.textContent;
 
   // spells ct-spells-spell
   const spellAttack = traverseToParentWithClass(div, [
     'ct-spells-spell__attacking',
-  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label');
+  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label')?.textContent;
 
   const spellDamage = traverseToParentWithClass(div, [
     'ct-spells-spell__damage',
-  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label');
+  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label')?.textContent;
 
-  const isSpellHeal = grandparent.querySelector('.ddbc-spell-damage-effect__healing');
+  const isSpellHeal = grandparent.querySelector('.ddbc-spell-damage-effect__healing')?.textContent;
 
   // action_attack
   const actionAttack = traverseToParentWithClass(div, [
     'ddbc-combat-attack__action',
-  ])?.parentElement.querySelector('.ddbc-combat-attack__name .ddbc-combat-attack__label');
+  ])?.parentElement.querySelector(
+    '.ddbc-combat-attack__name .ddbc-combat-attack__label',
+  )?.textContent;
   // action_damage
   const actionDamage = traverseToParentWithClass(div, [
     'ddbc-combat-attack__damage',
-  ])?.parentElement.querySelector('.ddbc-combat-attack__name .ddbc-combat-attack__label');
+  ])?.parentElement.querySelector(
+    '.ddbc-combat-attack__name .ddbc-combat-attack__label',
+  )?.textContent;
   // actions
 
-  let context = null;
+  let context = undefined;
   if (skillName || abilityName) {
-    context = (skillName ?? abilityName).textContent + ': Check';
+    context = (skillName ?? abilityName) + ': Check';
   } else if (saveName) {
-    context = saveName.textContent + ': Save';
+    context = saveName + ': Save';
   } else if (actionAttack || spellAttack) {
-    context = (actionAttack ?? spellAttack).textContent + ': To Hit';
+    context = (actionAttack ?? spellAttack) + ': To Hit';
   } else if (actionDamage || spellDamage) {
-    context = (actionDamage ?? spellDamage).textContent + (isSpellHeal ? ': Heal' : ': Damage');
+    context = (actionDamage ?? spellDamage) + (isSpellHeal ? ': Heal' : ': Damage');
   } else if (initiative) {
-    context = initiative.textContent + ': Roll';
+    context = initiative + ': Roll';
   }
 
   return context;
@@ -353,9 +382,9 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 
 async function rollCreate(
   roll: Record<string, number>,
-  modifier: number = null,
+  modifier: number = undefined,
   operator = {},
-  label = null,
+  label: string = undefined,
 ) {
   log.debug('creating a roll', { roll, modifier, operator, label });
   const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
@@ -618,13 +647,13 @@ function preloadTheme(theme: ITheme) {
   dddice.loadThemeResources(theme.id, true);
 }
 
-function initializeSDK() {
-  Promise.all([
+async function initializeSDK() {
+  return Promise.all([
     getStorage('apiKey'),
     getStorage('room'),
     getStorage('theme'),
     getStorage('render mode'),
-  ]).then(([apiKey, room, theme, renderMode]) => {
+  ]).then(async ([apiKey, room, theme, renderMode]) => {
     if (apiKey) {
       log.debug('initializeSDK', renderMode);
       if (dddice) {
