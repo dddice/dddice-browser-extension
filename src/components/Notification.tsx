@@ -5,7 +5,7 @@ import classNames from 'classnames';
 interface INotification {
   messages: string[];
 
-  onRemoveMessage(): void;
+  onRemoveMessage(any): void;
 }
 
 const Notification = (props: INotification) => {

@@ -1,5 +1,6 @@
 /** @format */
 
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import browser from 'webextension-polyfill';
 
@@ -20,6 +21,7 @@ let dddice: ThreeDDice;
 let canvasElement: HTMLCanvasElement;
 let customRoll: Record<string, number> = {};
 const DEFAULT_THEME = 'dddice-standard';
+let characterId;
 
 /**
  * Initialize listeners on all attacks
@@ -31,6 +33,13 @@ async function init() {
     )
   ) {
     log.debug('init');
+    const characterIdMatch = window.location.pathname.match(/characters\/(.+)/);
+    if (characterIdMatch.length > 0) {
+      characterId = characterIdMatch[1];
+    } else {
+      characterId = null;
+    }
+
     // add canvas element to document
     const renderMode = getStorage('render mode');
     if (!document.getElementById('dddice-canvas') && renderMode) {
@@ -115,6 +124,70 @@ function executeCustomRoll(e) {
   (document.querySelector('.dice-toolbar__dropdown-die') as HTMLElement).click();
 }
 
+function traverseToParentWithClass(me: HTMLElement, classNames: string[], maxLevels = 5) {
+  let curr = me.parentElement;
+  let level = 0;
+  while (level < maxLevels) {
+    if (classNames.every(className => curr.classList.contains(className))) {
+      return curr;
+    }
+    curr = curr.parentElement;
+    level = level + 1;
+  }
+}
+
+function getRollContext(div: HTMLDivElement) {
+  const grandparent = div.parentElement.parentElement;
+  // skills
+  const skillName = grandparent.querySelector('.ct-skills__col--skill');
+  // ability rolls
+  const abilityName = grandparent.querySelector(
+    '.ddbc-ability-summary__heading .ddbc-ability-summary__abbr',
+  );
+
+  // saves
+  const saveName = grandparent.querySelector('.ddbc-saving-throws-summary__ability-name');
+
+  // initiative
+  const initiative = div.parentElement.querySelector('h2');
+
+  // spells ct-spells-spell
+  const spellAttack = traverseToParentWithClass(div, [
+    'ct-spells-spell__attacking',
+  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label');
+
+  const spellDamage = traverseToParentWithClass(div, [
+    'ct-spells-spell__damage',
+  ])?.parentElement.querySelector('.ct-spells-spell__name .ct-spells-spell__label');
+
+  const isSpellHeal = grandparent.querySelector('.ddbc-spell-damage-effect__healing');
+
+  // action_attack
+  const actionAttack = traverseToParentWithClass(div, [
+    'ddbc-combat-attack__action',
+  ])?.parentElement.querySelector('.ddbc-combat-attack__name .ddbc-combat-attack__label');
+  // action_damage
+  const actionDamage = traverseToParentWithClass(div, [
+    'ddbc-combat-attack__damage',
+  ])?.parentElement.querySelector('.ddbc-combat-attack__name .ddbc-combat-attack__label');
+  // actions
+
+  let context = null;
+  if (skillName || abilityName) {
+    context = (skillName ?? abilityName).textContent + ': Check';
+  } else if (saveName) {
+    context = saveName.textContent + ': Save';
+  } else if (actionAttack || spellAttack) {
+    context = (actionAttack ?? spellAttack).textContent + ': To Hit';
+  } else if (actionDamage || spellDamage) {
+    context = (actionDamage ?? spellDamage).textContent + (isSpellHeal ? ': Heal' : ': Damage');
+  } else if (initiative) {
+    context = initiative.textContent + ': Roll';
+  }
+
+  return context;
+}
+
 function onPointerOver() {
   log.debug('onPointerOver');
   if (!this.id) {
@@ -122,6 +195,8 @@ function onPointerOver() {
   }
 
   const { top, right } = this.getBoundingClientRect();
+
+  const context = getRollContext(this);
 
   const overlayId = `ddd-${this.id}`;
   const overlayElement = document.getElementById(overlayId);
@@ -159,6 +234,7 @@ function onPointerOver() {
     buttonRoll.className =
       'h-8 w-8 bg-gray-900 rounded-l flex items-center justify-center p-1 hover:bg-gray-700 transition-colors duration-80';
     buttonRoll.dataset.text = text;
+    buttonRoll.dataset.context = context;
     node2.appendChild(buttonRoll);
 
     if (dieType === 'd20') {
@@ -168,6 +244,7 @@ function onPointerOver() {
         'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-sans font-bold';
       buttonAdv.textContent = 'adv';
       buttonAdv.dataset.text = text;
+      buttonAdv.dataset.context = context;
       node2.appendChild(buttonAdv);
 
       const buttonDis = document.createElement('button');
@@ -176,15 +253,17 @@ function onPointerOver() {
         'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-sans font-bold';
       buttonDis.textContent = 'dis';
       buttonDis.dataset.text = text;
+      buttonDis.dataset.context = context;
 
       node2.appendChild(buttonDis);
     } else {
       const buttonCrit = document.createElement('button');
       buttonCrit.addEventListener('pointerup', onPointerUp(overlayId, {}, true));
       buttonCrit.className =
-        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-bold';
+        'flex-1 h-8 flex items-center justify-center uppercase bg-gray-900 rounded-r p-1 hover:bg-gray-700 transition-colors duration-80 text-gray-100 font-sans font-bold';
       buttonCrit.textContent = 'crit';
       buttonCrit.dataset.text = text;
+      buttonCrit.dataset.context = context;
       node2.appendChild(buttonCrit);
     }
 
@@ -227,6 +306,7 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
     const text = (
       (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent
     ).replace(/[() ]/g, '');
+    const rollContext = (this as HTMLDivElement).dataset.context ?? getRollContext(this);
     log.debug('equation', text);
     let modifier: number;
     let dieCount = Object.keys(operator).length === 0 ? 1 : 2;
@@ -267,12 +347,17 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
       overlayElement.style.display = 'none';
     }
 
-    rollCreate({ [dieType]: dieCount }, modifier, operator);
+    rollCreate({ [dieType]: dieCount }, modifier, operator, rollContext);
   };
 }
 
-async function rollCreate(roll: Record<string, number>, modifier: number = null, operator = {}) {
-  log.debug('creating a roll', { roll, modifier, operator });
+async function rollCreate(
+  roll: Record<string, number>,
+  modifier: number = null,
+  operator = {},
+  label = null,
+) {
+  log.debug('creating a roll', { roll, modifier, operator, label });
   const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
 
   const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
@@ -317,7 +402,11 @@ async function rollCreate(roll: Record<string, number>, modifier: number = null,
   } else {
     try {
       await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-      await dddice.api.roll.create(dice, { operator });
+      await dddice.api.roll.create(dice, {
+        operator,
+        label,
+        external_id: `dndbCharacterId:${characterId}`,
+      });
     } catch (e) {
       console.error(e);
       notify(`${e.response?.data?.data?.message ?? e}`);
@@ -363,6 +452,14 @@ function generateChatMessage(roll: IRoll) {
   chatMessageElement.className =
     'noty_bar noty_type__alert noty_theme__valhalla noty_close_with_click animated faster bounceInUp';
   chatMessageElement.addEventListener('click', () => removeChatMessage(chatMessageElement));
+
+  let rollLabel: string;
+  let rollType: string;
+  const r = roll.label && roll.label.split(': ');
+  if (r && r.length >= 2) {
+    [rollLabel, rollType] = r;
+  }
+
   const root = ReactDOM.createRoot(chatMessageElement);
   root.render(
     <>
@@ -370,10 +467,22 @@ function generateChatMessage(roll: IRoll) {
         <div className="dice_result ">
           <div className="dice_result__info">
             <div className="dice_result__info__title">
-              <span className="dice_result__info__rolldetail">dddice: </span>
-              <span className="dice_result__rolltype rolltype_roll" style={{ color: roller.color }}>
-                {roller.username}
+              <span className="dice_result__info__rolldetail">
+                {rollLabel ?? roll.label ?? 'dddice'}:{' '}
               </span>
+              <span
+                className={`dice_result__rolltype rolltype_${
+                  rollType?.toLowerCase().replace(' ', '') ?? 'roll'
+                }`}
+              >
+                {rollType ?? 'custom'}
+              </span>{' '}
+            </div>
+            <div
+              className="dice_result__info__title"
+              style={{ fontSize: 'smaller', paddingRight: '8px' }}
+            >
+              {roller.username}
             </div>
             <div className="dice_result__info__results">
               <span className={`dice-icon-die dice-icon-die--${largestDie}`} alt="" />
