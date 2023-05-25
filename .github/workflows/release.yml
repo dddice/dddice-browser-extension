@@ -7,10 +7,16 @@ name: 'Release'
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Release Tag'
+      increment_version:
+        description: 'Increment Version'
         required: true
-        type: string
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - none
       chrome:
         description: 'Chrome Webstore'
         default: true
@@ -33,7 +39,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.tag }}
+      INCREMENT: ${{ github.event.inputs.increment_version }}
 
     steps:
       - name: Setup Volta
@@ -44,12 +50,27 @@ jobs:
         with:
           fetch-depth: 0 # fetch all history for git-cliff
 
+
+
+      - name: Calculate Version Number
+        id: version
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          VERSION=${TAG#v}
+          echo "latest version: $VERSION"
+          if [ "$INCREMENT" != "none" ]; then
+            VERSION=$(npx --yes semver -i "$INCREMENT" "$VERSION")
+          fi
+          echo "new version: $VERSION"
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Update Version
         run: |
-          npm --no-git-tag-version --allow-same-version version $VERSION
-          MANIFEST=$(cat src/manifest_v2/manifest.json | jq ".version |= \"${VERSION/v/}\"")
+          npm --no-git-tag-version --allow-same-version version ${{ steps.version.outputs.version }}
+          MANIFEST=$(cat src/manifest_v2/manifest.json | jq ".version |= \"${{ steps.version.outputs.version }}\"")
           echo "$MANIFEST" > src/manifest_v2/manifest.json
-          MANIFEST=$(cat src/manifest_v3/manifest.json | jq ".version |= \"${VERSION/v/}\"")
+          MANIFEST=$(cat src/manifest_v3/manifest.json | jq ".version |= \"${{ steps.version.outputs.version }}\"")
           echo "$MANIFEST" > src/manifest_v3/manifest.json
 
       - name: Commit
@@ -57,20 +78,20 @@ jobs:
           git add .
           git config user.email "developers@dddice.com"
           git config user.name "dddice"
-          git commit --allow-empty -m "release: ${{ github.event.inputs.tag }}-${{ github.run_number }}" || echo 'ok'
+          git commit --allow-empty -m "release: ${{ steps.version.outputs.tag }}-${{ github.run_number }}" || echo 'ok'
           git push
 
       - name: Tag
         if: inputs.force == false
         run: |
-          git tag ${{ github.event.inputs.tag }}
-          git push origin ${{ github.event.inputs.tag }}
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
 
       - name: Tag (Force)
         if: inputs.force
         run: |
-          git tag -f ${{ github.event.inputs.tag }}
-          git push -f origin ${{ github.event.inputs.tag }}
+          git tag -f ${{ steps.version.outputs.tag }}
+          git push -f origin ${{ steps.version.outputs.tag }}
 
       - name: Build Release
         run: |
@@ -93,7 +114,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
 
   change-log:
     name: Create Release with Change Log
@@ -104,7 +125,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
 
       - name: Generate Changelog
         id: git-cliff
@@ -128,8 +149,8 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.event.inputs.tag }}
-          name: ${{ github.event.inputs.tag }}
+          tag: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
           body: ${{ steps.release.outputs.RELEASE_BODY }}
           draft: false
           prerelease: false
@@ -147,7 +168,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
 
       - name: Publish Chrome
         uses: levigo/github-action-chrome-webstore-publish@v1.0
@@ -168,7 +189,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
 
       - name: Publish Edge
         uses: wdzeng/edge-addon@v1
@@ -189,7 +210,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ github.event.inputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
 
       - uses: trmcnvn/firefox-addon@v1
         with:
