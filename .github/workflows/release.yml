@@ -29,10 +29,6 @@ on:
         description: 'Firefox Add-ons Store'
         default: true
         type: boolean
-      force:
-        description: 'Force Release'
-        default: false
-        type: boolean
 
 jobs:
   release:
@@ -40,7 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INCREMENT: ${{ github.event.inputs.increment_version }}
-
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Setup Volta
         uses: volta-cli/action@v4
@@ -82,13 +80,13 @@ jobs:
           git push
 
       - name: Tag
-        if: inputs.force == false
+        if: inputs.increment_version != 'none'
         run: |
           git tag ${{ steps.version.outputs.tag }}
           git push origin ${{ steps.version.outputs.tag }}
 
       - name: Tag (Force)
-        if: inputs.force
+        if: inputs.increment_version == 'none'
         run: |
           git tag -f ${{ steps.version.outputs.tag }}
           git push -f origin ${{ steps.version.outputs.tag }}
@@ -125,7 +123,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
       - name: Generate Changelog
         id: git-cliff
@@ -149,8 +147,8 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.version.outputs.tag }}
-          name: ${{ steps.version.outputs.tag }}
+          tag: ${{ needs.release.outputs.tag }}
+          name: ${{ needs.release.outputs.tag }}
           body: ${{ steps.release.outputs.RELEASE_BODY }}
           draft: false
           prerelease: false
@@ -168,7 +166,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
       - name: Publish Chrome
         uses: levigo/github-action-chrome-webstore-publish@v1.0
@@ -189,7 +187,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
       - name: Publish Edge
         uses: wdzeng/edge-addon@v1
@@ -210,7 +208,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .
-          key: ${{ runner.OS }}-cache-${{ steps.version.outputs.tag }}-${{ github.run_number }}
+          key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
       - uses: trmcnvn/firefox-addon@v1
         with:
