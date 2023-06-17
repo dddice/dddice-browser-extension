@@ -143,7 +143,12 @@ export async function convertDiceRollButtons(element: HTMLDivElement, operator, 
 
   const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
 
-  const text = (element.dataset.text ?? element.textContent).replace(/[() ]/g, '');
+  let text;
+  if (element.dataset?.text ?? element.textContent) {
+    text = (element.dataset.text ?? element.textContent).replace(/[() ]/g, '');
+  } else {
+    text = element;
+  }
   log.debug('equation', text);
   let modifier: number;
   let dieCount = Object.keys(operator).length === 0 ? 1 : 2;

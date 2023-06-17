@@ -41,7 +41,9 @@ async function init() {
       initializeSDK();
     }
 
-    const characterSheetDiceElements = document.querySelectorAll('.section-skill');
+    const characterSheetDiceElements = document.querySelectorAll(
+      '.section-skill .dice-proficiency',
+    );
     const diceTrayButtons = document.querySelectorAll('#dice-buttons-0 div');
     const multiAttackButtons = document.querySelectorAll(
       '#dice-buttons-roll div div.grid-container:nth-child(2) div',
@@ -54,6 +56,7 @@ async function init() {
     );
 
     const inlineRollButtons = document.querySelectorAll('.dice-button.named-roll');
+    const profModalRollSection = document.querySelectorAll('.modal .prof-layout');
 
     const resetButton = document.querySelector('#dice-buttons-1 div');
 
@@ -85,8 +88,8 @@ async function init() {
     });
 
     inlineRollButtons.forEach(element => {
-      element.removeEventListener('click', diceTrayRoll, true);
-      element.addEventListener('click', diceTrayRoll, true);
+      element.removeEventListener('click', inlineRoll, true);
+      element.addEventListener('click', inlineRoll, true);
     });
 
     multiAttackButtons.forEach(element => {
@@ -97,6 +100,13 @@ async function init() {
     damageButton.forEach(element => {
       element.removeEventListener('click', damageRoll, true);
       element.addEventListener('click', damageRoll, true);
+    });
+
+    profModalRollSection.forEach(element => {
+      const button = element.parentElement.querySelector('.dice-button');
+      const [context, equation] = element.querySelector('.prof-name').textContent.split(' ');
+      button.removeEventListener('click', profModalRoll(context, equation), true);
+      button.addEventListener('click', profModalRoll(context, equation), true);
     });
 
     if (resetButton) {
@@ -129,8 +139,20 @@ function skillRoll(e) {
   e.preventDefault();
   e.stopPropagation();
 
-  openSkillRoll();
+  openSkillRoll(this.parentElement.querySelector('.section-skill-name').textContent);
   onSkillRoll().bind(this)(e);
+}
+
+function profModalRoll(context, equation) {
+  return async e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    openSkillRoll(context);
+    if (e.button === 2) return;
+    const dice = await convertDiceRollButtons(equation, {}, false);
+    await rollCreate(dice, {}, context);
+  };
 }
 
 async function diceTrayRoll(e) {
@@ -140,13 +162,23 @@ async function diceTrayRoll(e) {
   onPointerUp().bind(this)(e);
 }
 
+async function inlineRoll(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const context =
+    this.parentElement.parentElement.parentElement.querySelector('.listview-title')?.textContent;
+  openSkillRoll(context);
+  onSpellRoll().bind(this)(e, context);
+}
+
 async function multiAttackRoll(e) {
   e.preventDefault();
   e.stopPropagation();
 
   const room = await getStorage('room');
   await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-  onPointerUp().bind(this)(e);
+  onAttackRoll().bind(this)(e);
 }
 
 async function damageRoll(e) {
@@ -162,9 +194,8 @@ async function damageRoll(e) {
  * Pointer Up
  * Send roll event to dddice extension which will send to API
  */
-function onDamageRoll(overlayId = undefined, operator = {}, isCritical = false) {
+function onDamageRoll(operator = {}, isCritical = false) {
   return async function (e) {
-    log.debug('onDamageRoll');
     if (e.button === 2) return;
 
     e.preventDefault();
@@ -184,11 +215,32 @@ function onDamageRoll(overlayId = undefined, operator = {}, isCritical = false) 
 
     log.debug('equation damage roll', dice);
 
-    await rollCreate(dice, operator);
+    const context = document.getElementById('dice-title').textContent + ': Damage';
+
+    await rollCreate(dice, operator, context);
   };
 }
 
-function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
+function onAttackRoll(operator = {}, isCritical = false) {
+  return async function (e) {
+    log.debug('onAttackRoll');
+    if (e.button === 2) return;
+    const dice = await convertDiceRollButtons(this, operator, isCritical);
+    const context = document.getElementById('dice-title').textContent + ': To Hit';
+    await rollCreate(dice, operator, context);
+  };
+}
+
+function onSpellRoll(operator = {}, isCritical = false) {
+  return async function (e, context) {
+    log.debug('onSpellRoll');
+    if (e.button === 2) return;
+    const dice = await convertDiceRollButtons(this, operator, isCritical);
+    await rollCreate(dice, operator, context);
+  };
+}
+
+function onPointerUp(operator = {}, isCritical = false) {
   return async function (e) {
     log.debug('onPointerUp');
     if (e.button === 2) return;
@@ -197,16 +249,21 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
   };
 }
 
-function onSkillRoll(overlayId = undefined, operator = {}, isCritical = false) {
+function onSkillRoll(operator = {}, isCritical = false) {
   return async function (e) {
     log.debug('onPointerUp');
     if (e.button === 2) return;
-    const dice = await convertDiceRollButtons(this.querySelector('div'), operator, isCritical);
-    await rollCreate(dice, operator);
+    const dice = await convertDiceRollButtons(
+      this.parentElement.querySelector('.section-skill-total'),
+      operator,
+      isCritical,
+    );
+    const context = this.parentElement.querySelector('.section-skill-name').textContent;
+    await rollCreate(dice, operator, context);
   };
 }
 
-function openSkillRoll() {
+function openSkillRoll(context) {
   const diceTray: HTMLElement = document.getElementsByClassName('dice-tray')[0] as HTMLElement;
   if (diceTray.style.right !== '0px') {
     diceTray.style.right = '0px';
@@ -216,7 +273,7 @@ function openSkillRoll() {
       '#dice-buttons-roll div',
     ) as HTMLElement;
     diceButtonsRoll.classList.add('hidden');
-    document.getElementById('dice-title').innerText = '';
+    document.getElementById('dice-title').innerText = context;
     document.getElementById('dice-summary').innerText = '';
   }
 }
@@ -231,7 +288,12 @@ async function closeDiceTray() {
   if (dddice) dddice.clear();
 }
 
-async function rollCreate(roll: IDiceRoll[], operator = {}) {
+async function rollCreate(
+  roll: IDiceRoll[],
+  operator = {},
+  label = undefined,
+  external_id = undefined,
+) {
   const room = await getStorage('room');
 
   log.debug('creating a roll', { roll, operator });
@@ -246,7 +308,11 @@ async function rollCreate(roll: IDiceRoll[], operator = {}) {
     );
   } else {
     try {
-      await dddice.api.roll.create(roll, { operator });
+      await dddice.api.roll.create(roll, {
+        operator,
+        label,
+        external_id,
+      });
     } catch (e) {
       console.error(e);
       notify(`${e.response?.data?.data?.message ?? e}`);
@@ -275,7 +341,8 @@ function generateChatMessage(roll: IRoll) {
   root.render(
     <>
       {new Date().toLocaleTimeString()}{' '}
-      <span style={{ color: roller.color }}>{roller.username}</span>: {roll.total_value}
+      <span style={{ color: roller.color }}>{roller.username}</span> &mdash;{' '}
+      {roll.label ? `${roll.label}` : roll.equation}: {roll.total_value}
       <br />
       <span className="superscript-damage">
         {roll.equation}: {diceBreakdown}
@@ -413,5 +480,5 @@ const modalObserver = new MutationObserver(() => {
 modalObserver.observe(document.body, {
   attributes: false,
   childList: true,
-  subtree: false,
+  subtree: true,
 });

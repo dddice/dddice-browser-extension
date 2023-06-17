@@ -57,7 +57,7 @@
       "prettier --write"
     ],
     "*.ts*": [
-      "eslint . --fix",
+      "eslint --fix",
       "prettier --write"
     ]
   }
