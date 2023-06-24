@@ -9,7 +9,8 @@
     "build:manifest_v2": "parcel build src/manifest_v2/manifest.json --dist-dir manifest_v2 --no-cache --no-source-maps",
     "lint": "eslint .",
     "start": "parcel watch src/manifest_v3/manifest.json --dist-dir manifest_v3 --host localhost",
-    "start:firefox": "parcel watch src/manifest_v2/manifest.json --dist-dir manifest_v2 --host localhost"
+    "start:firefox": "parcel watch src/manifest_v2/manifest.json --dist-dir manifest_v2 --host localhost",
+    "prettier": "prettier -l --write src"
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.2.1",
