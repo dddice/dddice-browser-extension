@@ -35,7 +35,7 @@ async function init() {
   ) {
     log.debug('init');
     const characterIdMatch = window.location.pathname.match(/characters\/(.+)/);
-    if (characterIdMatch.length > 0) {
+    if (characterIdMatch?.length > 0) {
       characterId = characterIdMatch[1];
     } else {
       characterId = null;
