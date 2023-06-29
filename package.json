@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.2.1",
-    "dddice-js": "^0.13.3",
+    "dddice-js": "^0.14.0",
     "notiflix": "^3.2.6",
     "react-tooltip": "^4.5.0"
   },
