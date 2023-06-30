@@ -17,6 +17,10 @@
     "48": "../assets/dddice-48x48.png",
     "128": "../assets/dddice-128x128.png"
   },
+  "background": {
+    "service_worker": "../background.tsx",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "js": [
@@ -63,6 +67,15 @@
       ],
       "matches": [
         "*://*.pathbuilder2e.com/*"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
+        "../tabyltop.tsx"
+      ],
+      "matches": [
+        "*://*.tabyltop.com/*"
       ],
       "run_at": "document_idle"
     }
