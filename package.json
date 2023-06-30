@@ -7,10 +7,11 @@
   "scripts": {
     "build:manifest_v3": "parcel build src/manifest_v3/manifest.json --dist-dir manifest_v3 --no-cache --no-source-maps",
     "build:manifest_v2": "parcel build src/manifest_v2/manifest.json --dist-dir manifest_v2 --no-cache --no-source-maps",
-    "lint": "eslint .",
+    "lint": "eslint src --fix",
     "start": "parcel watch src/manifest_v3/manifest.json --dist-dir manifest_v3 --host localhost",
     "start:firefox": "parcel watch src/manifest_v2/manifest.json --dist-dir manifest_v2 --host localhost",
-    "prettier": "prettier -l --write src"
+    "prettier": "prettier -l --write src",
+    "check": "npm run prettier && npm run lint"
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.2.1",

@@ -45,6 +45,38 @@ chrome.runtime.onMessage.addListener(async function (message, sender, sendRespon
       },
     });
     sendResponse(true);
+  } else if (message.type === 'openCharacterSheet') {
+    chrome.windows.getLastFocused({ populate: false }, currentWindow => {
+      const top = currentWindow.top;
+      const left = currentWindow.left;
+      const width = currentWindow.width;
+      const height = currentWindow.height;
+
+      const newWidth = width - 500;
+      chrome.windows.update(currentWindow.id, { width: newWidth });
+      chrome.windows.create(
+        {
+          url: message.url,
+          width: 500,
+          height,
+          top,
+          left: left + newWidth,
+        },
+        createdWindow => {
+          const detectClosedWindow = windowId => {
+            if (windowId === createdWindow.id) {
+              chrome.windows.get(currentWindow.id, { populate: false }, currentWindow => {
+                chrome.windows.update(currentWindow.id, { width: currentWindow.width + 500 });
+              });
+              chrome.windows.onRemoved.removeListener(detectClosedWindow);
+            }
+          };
+          chrome.windows.onRemoved.addListener(detectClosedWindow);
+        },
+      );
+    });
+
+    sendResponse(true);
   } else {
     sendResponse(false);
   }

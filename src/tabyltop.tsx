@@ -40,7 +40,16 @@ window.addEventListener('message', async function (event) {
     });
     return;
   }
+  if (messageData.action === 'openCharacterSheet') {
+    chrome.runtime.sendMessage({
+      type: 'openCharacterSheet',
+      url: messageData.url,
+    });
+    return;
+  }
   if (messageData.action === 'configure') {
+    document.body.classList.add('dddice');
+
     const { apiKey, roomSlug, themeID } = messageData;
     const dddice = new ThreeDDice().initialize(null, apiKey, undefined, 'Browser Extension');
     const room = await dddice.api.room.get(roomSlug);
