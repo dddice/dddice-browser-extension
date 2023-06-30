@@ -12,6 +12,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === 'health') {
     window.postMessage(message, document.location.origin);
     sendResponse(true);
+  } else if (message.type === 'queryCustomConfiguration') {
+    window.postMessage(message, document.location.origin);
   } else {
     log.info(message);
     sendResponse(false);

@@ -143,15 +143,15 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
   useEffect(() => {
     async function init() {
-      let customConfiguration = await storageProvider.getStorage('customConfiguration');
-      if (customConfiguration) {
-        const elapsedTime = Date.now() - customConfiguration.lastUpdated;
-        if (elapsedTime > 30000) {
-          // customConfiguration is older than 30 seconds, so we don't trust it
-          customConfiguration = undefined;
+      pushLoading();
+      sdkBridge.queryCustomConfiguration();
+      setTimeout(async () => {
+        const customConfiguration = await storageProvider.getStorage('customConfiguration');
+        if (customConfiguration && Date.now() - customConfiguration.lastUpdated <= 500) {
+          setExternalConfiguration(customConfiguration);
         }
-      }
-      setExternalConfiguration(customConfiguration);
+        popLoading();
+      }, 500);
     }
     if (isConnected) {
       init();

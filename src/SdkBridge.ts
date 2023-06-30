@@ -9,6 +9,12 @@ export default class SdkBridge {
     });
   }
 
+  queryCustomConfiguration(): void {
+    chrome.tabs.query({}, function (tabs) {
+      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'queryCustomConfiguration' }));
+    });
+  }
+
   preloadTheme(theme: ITheme) {
     chrome.tabs.query({}, function (tabs) {
       tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'preloadTheme', theme }));
