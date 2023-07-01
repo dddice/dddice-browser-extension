@@ -48,7 +48,7 @@ window.addEventListener('message', async function (event) {
     return;
   }
   if (messageData.action === 'configure') {
-    document.body.classList.add('dddice');
+    window.postMessage({ type: 'dddice', action: 'enabled' }, document.location.origin);
 
     const { apiKey, roomSlug, themeID } = messageData;
     const dddice = new ThreeDDice().initialize(null, apiKey, undefined, 'Browser Extension');

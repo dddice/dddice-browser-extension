@@ -147,7 +147,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       sdkBridge.queryCustomConfiguration();
       setTimeout(async () => {
         const customConfiguration = await storageProvider.getStorage('customConfiguration');
-        if (customConfiguration && Date.now() - customConfiguration.lastUpdated <= 500) {
+        if (customConfiguration && Date.now() - customConfiguration.lastUpdated <= 600) {
           setExternalConfiguration(customConfiguration);
         }
         popLoading();
