@@ -22,6 +22,7 @@ import StorageProvider from './StorageProvider';
 import SdkBridge from './SdkBridge';
 import PermissionProvider from './PermissionProvider';
 import Toggle from './components/Toggle';
+import { CustomConfiguration } from './schema/custom_configuration';
 
 const log = createLogger('App');
 
@@ -93,6 +94,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
   const [isEnterApiKey, setIsEnterApiKey] = useState(false);
 
+  const [externalConfiguration, setExternalConfiguration] = useState<
+    CustomConfiguration | undefined
+  >(undefined);
   /**
    * Connect to VTT
    * Mount / Unmount
@@ -134,6 +138,23 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
     if (isConnected) {
       initStorage();
+    }
+  }, [isConnected]);
+
+  useEffect(() => {
+    async function init() {
+      pushLoading();
+      sdkBridge.queryCustomConfiguration();
+      setTimeout(async () => {
+        const customConfiguration = await storageProvider.getStorage('customConfiguration');
+        if (customConfiguration && Date.now() - customConfiguration.lastUpdated <= 600) {
+          setExternalConfiguration(customConfiguration);
+        }
+        popLoading();
+      }, 500);
+    }
+    if (isConnected) {
+      init();
     }
   }, [isConnected]);
 
@@ -399,6 +420,16 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         <img src={imageLogo} alt="dddice" />
         <span className="text-white text-lg">dddice</span>
       </div>
+      {externalConfiguration && (
+        <div className="flex flex-col space-y-1 items-center justify-center">
+          <span class="text-white text-lg">Configuration is being controlled by</span>
+          <img src={externalConfiguration.icon} alt="configuration system" />
+          <div className="flex flex-col items-center space-y-3">
+            <p class="text-white">You can change your theme there</p>
+            <p className="text-white space-y-2">Room: {(state.room || { name: 'Unknown' }).name}</p>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="text-gray-700 mt-4">
           <p className="text-center text-neon-red">{error}</p>
@@ -407,7 +438,8 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       {isEnterApiKey ? (
         <ApiKeyEntry onSuccess={onKeySuccess} />
       ) : (
-        isConnected && (
+        isConnected &&
+        !externalConfiguration && (
           <>
             {isLoading ? (
               <div className="flex flex-col justify-center text-gray-700 mt-4">

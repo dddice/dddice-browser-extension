@@ -9,6 +9,12 @@ export default class SdkBridge {
     });
   }
 
+  queryCustomConfiguration(): void {
+    chrome.tabs.query({}, function (tabs) {
+      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'queryCustomConfiguration' }));
+    });
+  }
+
   preloadTheme(theme: ITheme) {
     chrome.tabs.query({}, function (tabs) {
       tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { type: 'preloadTheme', theme }));
@@ -28,6 +34,8 @@ export default class SdkBridge {
           resolve('dddice');
         } else if (/pathbuilder2e.com/.test(tab.url)) {
           resolve('Pathbuilder 2e');
+        } else if (/tabyltop.com/.test(tab.url)) {
+          resolve('Tabyltop');
         }
       }),
     );
