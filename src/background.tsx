@@ -21,6 +21,71 @@ function sendMessageToAllTabs(message) {
   });
 }
 
+function openURLInNewWindow(url: string, newWindowWidth: number = 500) {
+  let originalState = 'normal';
+  let currentWindowID: string | undefined;
+
+  const updateWindowSizeAndOpenNewWindow = currentWindow => {
+    const top = currentWindow.top;
+    const left = currentWindow.left;
+    const width = currentWindow.width;
+    const height = currentWindow.height;
+
+    const currentWindowWidth = width - newWindowWidth;
+    chrome.windows.update(currentWindowID, { width: currentWindowWidth });
+    chrome.windows.create(
+      {
+        url: url,
+        width: newWindowWidth,
+        height,
+        top,
+        left: left + currentWindowWidth,
+      },
+      createdWindow => {
+        const detectClosedWindow = windowId => {
+          if (windowId === createdWindow.id) {
+            chrome.windows.get(currentWindowID, { populate: false }, currentWindow => {
+              chrome.windows.update(currentWindowID, { width: currentWindow.width + 500 }, () => {
+                if (originalState !== 'normal') {
+                  chrome.windows.update(currentWindowID, { state: originalState });
+                }
+              });
+            });
+            chrome.windows.onRemoved.removeListener(detectClosedWindow);
+          }
+        };
+        chrome.windows.onRemoved.addListener(detectClosedWindow);
+      },
+    );
+  };
+
+  chrome.windows.getLastFocused({ populate: false }, currentWindow => {
+    currentWindowID = currentWindow.id;
+    originalState = currentWindow.state;
+    chrome.runtime.getPlatformInfo((platform: PlatformInfo) => {
+      if (originalState === 'maximized' && platform.os === 'mac') {
+        //on macos we can resize a maximized window, so we don't need to unmaximize it
+        originalState = 'normal';
+      }
+      if (originalState !== 'normal') {
+        chrome.windows.update(
+          currentWindowID,
+          {
+            state: 'normal',
+          },
+          () => {
+            chrome.windows.get(currentWindowID, { populate: false }, currentWindow2 => {
+              updateWindowSizeAndOpenNewWindow(currentWindow2);
+            });
+          },
+        );
+      } else {
+        updateWindowSizeAndOpenNewWindow(currentWindow);
+      }
+    });
+  });
+}
+
 chrome.runtime.onMessage.addListener(async function (message, sender, sendResponse) {
   if (message.type === 'health') {
     try {
@@ -46,36 +111,7 @@ chrome.runtime.onMessage.addListener(async function (message, sender, sendRespon
     });
     sendResponse(true);
   } else if (message.type === 'openCharacterSheet') {
-    chrome.windows.getLastFocused({ populate: false }, currentWindow => {
-      const top = currentWindow.top;
-      const left = currentWindow.left;
-      const width = currentWindow.width;
-      const height = currentWindow.height;
-
-      const newWidth = width - 500;
-      chrome.windows.update(currentWindow.id, { width: newWidth });
-      chrome.windows.create(
-        {
-          url: message.url,
-          width: 500,
-          height,
-          top,
-          left: left + newWidth,
-        },
-        createdWindow => {
-          const detectClosedWindow = windowId => {
-            if (windowId === createdWindow.id) {
-              chrome.windows.get(currentWindow.id, { populate: false }, currentWindow => {
-                chrome.windows.update(currentWindow.id, { width: currentWindow.width + 500 });
-              });
-              chrome.windows.onRemoved.removeListener(detectClosedWindow);
-            }
-          };
-          chrome.windows.onRemoved.addListener(detectClosedWindow);
-        },
-      );
-    });
-
+    openURLInNewWindow(message.url, message.width ?? 500);
     sendResponse(true);
   } else {
     sendResponse(false);
