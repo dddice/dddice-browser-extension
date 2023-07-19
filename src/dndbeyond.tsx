@@ -155,7 +155,9 @@ async function init() {
     }
 
     const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
-    const characterSheetDiceElements = document.querySelectorAll('.integrated-dice__container');
+    const characterSheetDiceElements = document.querySelectorAll(
+      '.integrated-dice__container,.avtt-roll-button',
+    );
     const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
     const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
     const isCharacterSheet = document.querySelector('.character-app');
