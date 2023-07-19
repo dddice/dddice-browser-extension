@@ -63,7 +63,7 @@ async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element,
       removeLoadingMessage();
     } else {
       try {
-        await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+        //await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
         const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
         node.setAttribute('data-dddice-roll-uuid', roll.uuid);
       } catch (e) {

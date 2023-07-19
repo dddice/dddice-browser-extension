@@ -69,29 +69,25 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
 export async function convertInlineRollToDddiceRoll(equation, result) {
   let theme = await getStorage('theme');
   theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
-
   const dice = [];
   const parsedEquation = Parser.parse(equation);
-  const roll20Roll = document.createElement('div');
-  roll20Roll.innerText = result;
-
-  // extract the roll values from the message
   const values = [];
-  roll20Roll.querySelectorAll('.basicdiceroll').forEach(die => {
-    const value = parseInt(die.textContent);
-    values.push(value);
-  });
 
-  roll20Roll.childNodes.forEach(node => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      log.debug('modifiers', node.textContent);
-      // @ts-ignore
-      for (const modifier of node.textContent.matchAll(/[-+]\d/g)) {
-        log.debug(modifier);
-        values.push(parseInt(modifier[0]));
-      }
-    }
-  });
+  if (result) {
+    // extract the roll values from the message
+    [...result.matchAll(/<span class="basicdiceroll.*?">(\d+)<\/span>/g)].forEach(die => {
+      log.debug('value', die[1]);
+      const value = parseInt(die[1]);
+      values.push(value);
+    });
+
+    (result.match(/\)([+-].\d+)/g) ?? []).forEach(modifier => {
+      log.debug(modifier);
+      values.push(parseInt(modifier[0]));
+    });
+
+    log.debug('values', values);
+  }
 
   // build the roll object
   let sign = 1;
@@ -135,6 +131,7 @@ export async function convertInlineRollToDddiceRoll(equation, result) {
       });
     }
   });
+  log.debug('dddice dice', dice);
   return hasDice ? dice : [];
 }
 
