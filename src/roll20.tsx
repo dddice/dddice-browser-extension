@@ -13,6 +13,7 @@ import {
   IRollValue,
   IRoom,
   ITheme,
+  IUser,
   ThreeDDice,
   ThreeDDiceAPI,
   ThreeDDiceRollEvent,
@@ -107,8 +108,21 @@ function removeLoadingMessage() {
   document.getElementById('dddice-loading-message')?.remove();
 }
 
+function generateChatMessageTemplate(roll: IRoll) {
+  const characterName = roll.room.participants.find(
+    participant => participant.user.uuid === roll.user.uuid,
+  ).username;
+
+  const template = `&{template:default} {{roller=${characterName}}}  {{${roll.label ?? 'roll'}=[[ ${
+    roll.total_value
+  } [${roll.equation}]]]}} {{source=dddice}}`;
+
+  return template;
+}
+
 function generateChatMessage(roll: IRoll) {
   const chatMessageElement = document.createElement('div');
+
   chatMessageElement.className = 'message rollresult dddiceRoll';
   const root = ReactDOM.createRoot(chatMessageElement);
   root.render(
@@ -228,7 +242,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                 e.target.innerText = `joining room...`;
                 let api;
                 if (!dddice?.api) {
-                  const apiKey = (await new ThreeDDiceAPI().user.guest(), 'Roll20').data;
+                  const apiKey = (await new ThreeDDiceAPI(undefined, 'Roll20').user.guest()).data;
                   api = new ThreeDDiceAPI(apiKey, 'Roll20');
                   await setStorage({ apiKey });
                 } else {
@@ -259,7 +273,11 @@ function watchForRollToMake(mutations: MutationRecord[]) {
           if (node.querySelector) {
             // look for roll messages
             const rollMessageType: RollMessageType = messageRollType(node);
-            if (rollMessageType && !node.classList.contains('dddiceRoll')) {
+            if (
+              rollMessageType &&
+              !node.classList.contains('dddiceRoll') &&
+              !node.textContent.includes('dddice')
+            ) {
               log.info('found a roll', node);
               node.classList.add('hidden');
               addLoadingMessage();
@@ -324,6 +342,17 @@ function updateChat(roll: IRoll) {
   if (rollMessageElement) {
     rollMessageElement.classList.remove('hidden');
     rollMessageElement.scrollIntoView();
+  } else if (roll.user.uuid === user.uuid) {
+    const chat = document.getElementById('textchat-input');
+    const txt = chat.getElementsByTagName('textarea')[0];
+    const btn = chat.getElementsByTagName('button')[0];
+
+    const old_text = txt.value;
+    txt.value = generateChatMessageTemplate(roll);
+    isSendingMessage = true; // so that the click on the button doesn't clear the die that was just rolled
+    btn.click();
+    isSendingMessage = false;
+    txt.value = old_text;
   } else {
     const chatElement = document.querySelector('#textchat > div.content');
 
@@ -350,7 +379,7 @@ function initializeSDK() {
     getStorage('room'),
     getStorage('theme'),
     getStorage('render mode'),
-  ]).then(([apiKey, room, theme, renderMode]) => {
+  ]).then(async ([apiKey, room, theme, renderMode]) => {
     if (apiKey) {
       log.debug('initializeSDK', renderMode);
       if (dddice) {
@@ -401,6 +430,8 @@ function initializeSDK() {
           setTimeout(() => updateChat(roll), 1500),
         );
       }
+
+      user = (await dddice.api.user.get()).data;
     } else {
       log.debug('no api key');
     }
@@ -408,9 +439,11 @@ function initializeSDK() {
 }
 
 let dddice: ThreeDDice;
+let user: IUser;
+let isSendingMessage: boolean = false;
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (!dddice?.isDiceThrowing) dddice.clear();
+  if (!dddice?.isDiceThrowing && !isSendingMessage) dddice.clear();
 });
 
 // add canvas element to document
