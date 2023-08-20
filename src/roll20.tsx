@@ -47,7 +47,7 @@ function init() {
 async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
   const operator = convertOperators(equation);
   const room = await getStorage('room');
-
+  log.debug('dice.length', dice.length);
   if (dice.length > 0) {
     log.info('the die is cast', equation);
     if (!dddice?.api) {
@@ -191,19 +191,19 @@ function domElementIsInClass(node, classNames) {
 
 function convertOperators(equation: string) {
   const operator = {};
-  const keep = equation.match(/k(l|h)?(\d+)?/);
+  const keep = equation.match(/k([lh])?(\d+)?/);
   if (keep) {
     if (keep.length > 0) {
-      if (keep.length == 3) {
+      log.debug('keep.length', keep.length);
+      if (keep.length == 3 && keep[1]) {
         operator['k'] = `${keep[1]}${keep[2]}`;
-      } else if (keep.length == 2) {
-        operator['k'] = `${keep[1]}1`;
-      } else if (keep.length == 1) {
-        if (operator === 'k') {
-          operator['k'] = 'h1';
-        }
+      } else if (keep.length == 3 && keep[2]) {
+        operator['k'] = `h${keep[2]}`;
+      } else {
+        operator['k'] = 'h1';
       }
     }
+    log.debug(operator);
     return operator;
   }
 }
@@ -306,8 +306,8 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       [_, equation, result] = rollNode
                         .getAttribute('title')
                         .replace(/\[.*?]/g, '')
-                        .match(/rolling ([%*+\-/^.0-9dkh()]*).* = (.*)/i) ?? [null, null, null];
-
+                        .match(/rolling ([%*+\-/^.0-9dkh(){},]*).* = (.*)/i) ?? [null, null, null];
+                      log.debug('roll equation?', _);
                       if (equation && result) {
                         log.debug('convert equation', equation);
                         dice = await convertInlineRollToDddiceRoll(equation, result);

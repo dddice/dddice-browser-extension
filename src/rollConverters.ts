@@ -71,6 +71,7 @@ export async function convertInlineRollToDddiceRoll(equation, result) {
   theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
   const dice = [];
   const parsedEquation = Parser.parse(equation);
+  log.debug('parsed equation', parsedEquation);
   const values = [];
 
   if (result) {
@@ -93,42 +94,51 @@ export async function convertInlineRollToDddiceRoll(equation, result) {
   let sign = 1;
   let dieIndex = 0;
   let hasDice = false;
-  parsedEquation.forEach(term => {
-    if (term.sides && term.qty) {
-      hasDice = true;
-      for (let i = 0; i < term.qty; i++) {
-        if (result) {
-          if (term.sides === 100) {
-            convertD100toD10x(theme, values[dieIndex++]).map(die => dice.push(die));
+  parsedEquation.forEach(roll => {
+    const stack: any = [];
+
+    let term: any = roll;
+    while (term) {
+      log.debug('term', term);
+      if (term.expressions) {
+        term.expressions.map(i => stack.push(i[0]));
+        log.debug('stack', stack);
+      } else if (term.sides && term.qty) {
+        hasDice = true;
+        for (let i = 0; i < term.qty; i++) {
+          if (result) {
+            if (term.sides === 100) {
+              convertD100toD10x(theme, values[dieIndex++]).map(die => dice.push(die));
+            } else {
+              dice.push({
+                theme,
+                type: `d${term.sides}`,
+                value: parseInt(values[dieIndex++]),
+              });
+            }
           } else {
-            dice.push({
-              theme,
-              type: `d${term.sides}`,
-              value: parseInt(values[dieIndex++]),
-            });
-          }
-        } else {
-          if (term.sides === 100) {
-            convertD100toD10x(theme).map(die => dice.push(die));
-          } else {
-            dice.push({
-              theme,
-              type: `d${term.sides}`,
-            });
+            if (term.sides === 100) {
+              convertD100toD10x(theme).map(die => dice.push(die));
+            } else {
+              dice.push({
+                theme,
+                type: `d${term.sides}`,
+              });
+            }
           }
         }
+      } else if (term === '+') {
+        sign = 1;
+      } else if (term === '-') {
+        sign = -1;
+      } else if (!isNaN(sign * parseInt(term))) {
+        dice.push({
+          theme,
+          type: 'mod',
+          value: sign * parseInt(term),
+        });
       }
-    } else if (term === '+') {
-      sign = 1;
-    } else if (term === '-') {
-      sign = -1;
-    } else if (!isNaN(sign * parseInt(term))) {
-      log.debug('bad mod?', term, parseInt(term));
-      dice.push({
-        theme,
-        type: 'mod',
-        value: sign * parseInt(term),
-      });
+      term = stack.pop();
     }
   });
   log.debug('dddice dice', dice);
