@@ -216,3 +216,24 @@ export async function convertDiceRollButtons(element: HTMLDivElement, operator, 
   }
   return dice;
 }
+
+export async function pathbuilder2eToDddice(rollData) {
+  let theme = await getStorage('theme');
+  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
+  const dice = [];
+
+  rollData.rollDiceDump.forEach(die => {
+    for (let i = 0; i < die.numDice; i++) {
+      dice.push({
+        type: 'd' + die.diceSize,
+        theme,
+      });
+    }
+  });
+
+  if (rollData.rollBonus != 0) {
+    dice.push({ type: 'mod', theme, value: rollData.rollBonus });
+  }
+
+  return dice;
+}

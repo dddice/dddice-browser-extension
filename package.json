@@ -13,15 +13,11 @@
     "prettier": "prettier -l --write src",
     "check": "npm run prettier && npm run lint"
   },
-  "dependencies": {
-    "@dice-roller/rpg-dice-roller": "^5.2.1",
-    "dddice-js": "^0.14.9",
-    "notiflix": "^3.2.6",
-    "react-tooltip": "^4.5.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
     "@commitlint/config-conventional": "^13.2.0",
+    "@dice-roller/rpg-dice-roller": "^5.2.1",
     "@parcel/bundler-experimental": "^2.7.0",
     "@parcel/config-webextension": "^2.7.0",
     "@parcel/transformer-svg-react": "^2.7.0",
@@ -31,10 +27,12 @@
     "buffer": "^6.0.3",
     "classnames": "^2.3.1",
     "crypto-browserify": "^3.12.0",
+    "dddice-js": "^0.17.2",
     "eslint-config-prettier": "^8.5.0",
     "events": "^3.3.0",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.1",
+    "notiflix": "^3.2.6",
     "os-browserify": "^0.3.0",
     "parcel": "^2.7.0",
     "path-browserify": "^1.0.1",
@@ -44,6 +42,7 @@
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-tooltip": "^4.5.0",
     "stream-browserify": "^3.0.0",
     "tailwindcss": "^3.1.8",
     "web-ext": "^7.2.0"

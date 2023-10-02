@@ -15,100 +15,68 @@ import {
 } from 'dddice-js';
 
 import notify from './utils/notify';
-import { convertDiceRollButtons, convertInlineRollToDddiceRoll } from './rollConverters';
+import {
+  convertDiceRollButtons,
+  convertInlineRollToDddiceRoll,
+  pathbuilder2eToDddice,
+} from './rollConverters';
 
 const log = createLogger('pb2e');
 log.info('DDDICE PATHBUILDER');
 
 let dddice: ThreeDDice;
 let canvasElement: HTMLCanvasElement;
+let lastRoll: IRoll;
+let postMessageAPIEnabled: boolean = false;
+
+function buildShadowElement(renderMode: Promise<any>, elementId: string) {
+  const shadowElementId = `dddice-${elementId}`;
+  const element = document.getElementById(elementId);
+  // hide their dice canvas result overlay. Removing causes errors in pathbuilder's code
+  element.style.display = 'none';
+
+  // add dddice-canvas-total element to document
+  if (!document.getElementById(shadowElementId) && renderMode) {
+    const canvasTotal = document.createElement('div');
+    canvasTotal.id = shadowElementId;
+    canvasTotal.classList.add('dddice');
+
+    element.insertAdjacentElement('afterend', canvasTotal);
+  }
+}
 
 /**
  * Initialize listeners on all attacks
  */
 async function init() {
-  if (/^\/(app.html)/.test(window.location.pathname)) {
+  if (/\/(app.html)$/.test(window.location.pathname)) {
     log.debug('init');
+
+    if (/\/beta\//.test(window.location.pathname)) {
+      postMessageAPIEnabled = true;
+    }
 
     // remove their dice canvas
     document
       .querySelectorAll('#canvas > canvas')
       .forEach(element => element.id !== 'dddice-canvas' && element.remove());
 
-    // add canvas element to document
     const renderMode = getStorage('render mode');
+    buildShadowElement(renderMode, 'canvas-total');
+    buildShadowElement(renderMode, 'dice-result');
+
+    // add our own canvas element to document
     if (!document.getElementById('dddice-canvas') && renderMode) {
       initializeSDK();
     }
 
-    const characterSheetDiceElements = document.querySelectorAll(
-      '.section-skill .dice-proficiency',
-    );
     const diceTrayButtons = document.querySelectorAll('#dice-buttons-0 div');
-    const multiAttackButtons = document.querySelectorAll(
-      '#dice-buttons-roll div div.grid-container:nth-child(2) div',
-    );
-    const damageButton = document.querySelectorAll(
-      '#dice-buttons-roll div div.grid-container:nth-child(3) div:nth-child(1)',
-    );
-    const criticalButton = document.querySelectorAll(
-      '#dice-buttons-roll div div.grid-container:nth-child(3) div:nth-child(2)',
-    );
-
-    const inlineRollButtons = document.querySelectorAll('.dice-button.named-roll');
-    const profModalRollSection = document.querySelectorAll('.modal .prof-layout');
-
-    const resetButton = document.querySelector('#dice-buttons-1 div');
-
-    criticalButton.forEach((element: HTMLElement) => {
-      element.style.opacity = '0.5';
-      //element.style.pointerEvents = 'none';
-      element.style.cursor = 'not-allowed';
-      element.setAttribute('title', '⚠ dddice | criticals are not yet supported');
-      element.addEventListener(
-        'click',
-        e => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        true,
-      );
-    });
-
-    log.debug('multiAttackButtons', multiAttackButtons);
-
-    characterSheetDiceElements.forEach(element => {
-      element.removeEventListener('click', skillRoll, true);
-      element.addEventListener('click', skillRoll, true);
-    });
-
     diceTrayButtons.forEach(element => {
       element.removeEventListener('click', diceTrayRoll, true);
       element.addEventListener('click', diceTrayRoll, true);
     });
 
-    inlineRollButtons.forEach(element => {
-      element.removeEventListener('click', inlineRoll, true);
-      element.addEventListener('click', inlineRoll, true);
-    });
-
-    multiAttackButtons.forEach(element => {
-      element.removeEventListener('click', multiAttackRoll, true);
-      element.addEventListener('click', multiAttackRoll, true);
-    });
-
-    damageButton.forEach(element => {
-      element.removeEventListener('click', damageRoll, true);
-      element.addEventListener('click', damageRoll, true);
-    });
-
-    profModalRollSection.forEach(element => {
-      const button = element.parentElement.querySelector('.dice-button');
-      const [context, equation] = element.querySelector('.prof-name').textContent.split(' ');
-      button.removeEventListener('click', profModalRoll(context, equation), true);
-      button.addEventListener('click', profModalRoll(context, equation), true);
-    });
-
+    const resetButton = document.querySelector('#dice-buttons-1 div');
     if (resetButton) {
       resetButton.removeEventListener('click', resetRoll, true);
       resetButton.addEventListener('click', resetRoll, true);
@@ -117,6 +85,75 @@ async function init() {
     //  click on the dice backdrop closes the dice tray
     const diceBackdrop: HTMLElement = document.getElementById('dice-backdrop') as HTMLElement;
     diceBackdrop.addEventListener('click', () => closeDiceTray());
+
+    if (!postMessageAPIEnabled) {
+      const characterSheetDiceElements = document.querySelectorAll(
+        '.section-skill .dice-proficiency',
+      );
+      const multiAttackButtons = document.querySelectorAll(
+        '#dice-buttons-roll div div.grid-container:nth-child(2) div',
+      );
+      const damageButton = document.querySelectorAll(
+        '#dice-buttons-roll div div.grid-container:nth-child(3) div:nth-child(1)',
+      );
+      const criticalButton = document.querySelectorAll(
+        '#dice-buttons-roll div div.grid-container:nth-child(3) div:nth-child(2)',
+      );
+
+      const inlineRollButtons = document.querySelectorAll('.dice-button.named-roll');
+      const profModalRollSection = document.querySelectorAll('.modal .prof-layout');
+
+      const resetButton = document.querySelector('#dice-buttons-1 div');
+
+      criticalButton.forEach((element: HTMLElement) => {
+        element.style.opacity = '0.5';
+        //element.style.pointerEvents = 'none';
+        element.style.cursor = 'not-allowed';
+        element.setAttribute('title', '⚠ dddice | criticals are not yet supported');
+        element.addEventListener(
+          'click',
+          e => {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+          true,
+        );
+      });
+
+      log.debug('multiAttackButtons', multiAttackButtons);
+
+      characterSheetDiceElements.forEach(element => {
+        element.removeEventListener('click', skillRoll, true);
+        element.addEventListener('click', skillRoll, true);
+      });
+
+      diceTrayButtons.forEach(element => {
+        element.removeEventListener('click', diceTrayRoll, true);
+        element.addEventListener('click', diceTrayRoll, true);
+      });
+
+      inlineRollButtons.forEach(element => {
+        element.removeEventListener('click', inlineRoll, true);
+        element.addEventListener('click', inlineRoll, true);
+      });
+
+      multiAttackButtons.forEach(element => {
+        element.removeEventListener('click', multiAttackRoll, true);
+        element.addEventListener('click', multiAttackRoll, true);
+      });
+
+      damageButton.forEach(element => {
+        element.removeEventListener('click', damageRoll, true);
+        element.addEventListener('click', damageRoll, true);
+      });
+
+      profModalRollSection.forEach(element => {
+        const button = element.parentElement.querySelector('.dice-button');
+        const [context, equation] = element.querySelector('.prof-name').textContent.split(' ');
+        button.removeEventListener('click', profModalRoll(context, equation), true);
+        button.addEventListener('click', profModalRoll(context, equation), true);
+      });
+    }
   } else {
     log.debug('uninit');
     const currentCanvas = document.getElementById('dddice-canvas');
@@ -132,6 +169,7 @@ async function resetRoll(e) {
   e.stopPropagation();
   const room = await getStorage('room');
   await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+  lastRoll = null;
   if (dddice) dddice.clear();
 }
 
@@ -242,10 +280,14 @@ function onSpellRoll(operator = {}, isCritical = false) {
 
 function onPointerUp(operator = {}, isCritical = false) {
   return async function (e) {
-    log.debug('onPointerUp');
+    log.debug('onPointerUp', lastRoll);
     if (e.button === 2) return;
     const dice = await convertDiceRollButtons(this, operator, isCritical);
-    await rollCreate(dice, operator);
+    if (lastRoll) {
+      await rollAddDice(dice);
+    } else {
+      await rollCreate(dice, operator);
+    }
   };
 }
 
@@ -288,16 +330,7 @@ async function closeDiceTray() {
   if (dddice) dddice.clear();
 }
 
-async function rollCreate(
-  roll: IDiceRoll[],
-  operator = {},
-  label = undefined,
-  external_id = undefined,
-) {
-  const room = await getStorage('room');
-
-  log.debug('creating a roll', { roll, operator });
-
+async function callDecorator(room, call) {
   if (!dddice?.api) {
     notify(
       `dddice extension hasn't been set up yet. Please open the the extension pop up via the extensions menu`,
@@ -308,11 +341,7 @@ async function rollCreate(
     );
   } else {
     try {
-      await dddice.api.roll.create(roll, {
-        operator,
-        label,
-        external_id,
-      });
+      call();
     } catch (e) {
       console.error(e);
       notify(`${e.response?.data?.data?.message ?? e}`);
@@ -320,7 +349,46 @@ async function rollCreate(
   }
 }
 
-function generateChatMessage(roll: IRoll) {
+async function rollCreate(
+  roll: IDiceRoll[],
+  operator = {},
+  label = undefined,
+  external_id = undefined,
+) {
+  const room = await getStorage('room');
+  lastRoll = null;
+  log.debug('creating a roll', { roll, operator });
+
+  await callDecorator(
+    room,
+    async () =>
+      (lastRoll = (
+        await dddice.api.roll.create(roll, {
+          operator,
+          label,
+          external_id,
+        })
+      ).data),
+  );
+}
+
+async function rollAddDice(roll: IDiceRoll[], operator = null) {
+  const room = await getStorage('room');
+  log.debug('updating a roll', { roll, operator, lastRoll });
+
+  await callDecorator(
+    room,
+    async () =>
+      (lastRoll = (
+        await dddice.api.roll.update(lastRoll.uuid, {
+          dice: roll,
+          room: room.slug,
+        })
+      ).data),
+  );
+}
+
+function generateOrUpdateChatMessage(roll: IRoll) {
   const diceBreakdown = roll.values
     .filter(die => !die.is_dropped)
     .reduce(
@@ -334,9 +402,17 @@ function generateChatMessage(roll: IRoll) {
     participant => participant.user.uuid === roll.user.uuid,
   );
 
-  const chatMessageElement = document.createElement('div');
-  chatMessageElement.className = 'dice-history-item';
+  let chatMessageElement = document.getElementById(`dddice-${roll.uuid}`);
+  if (!chatMessageElement) {
+    chatMessageElement = document.createElement('div');
+    chatMessageElement.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+    chatMessageElement.className = 'dice-history-item dddice';
+    chatMessageElement.id = `dddice-${roll.uuid}`;
+    const notificationControls = document.getElementById('dice-history');
 
+    notificationControls.insertAdjacentElement('afterbegin', chatMessageElement);
+  }
+  // TODO: refactor this, its not good react but it *works*
   const root = ReactDOM.createRoot(chatMessageElement);
   root.render(
     <>
@@ -349,16 +425,17 @@ function generateChatMessage(roll: IRoll) {
       </span>
     </>,
   );
-  chatMessageElement.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+
   return chatMessageElement;
 }
 
 function updateChat(roll: IRoll) {
-  const notificationControls = document.getElementById('dice-history');
-  notificationControls.insertAdjacentElement('afterbegin', generateChatMessage(roll));
-  const result = document.getElementById('dice-result');
+  generateOrUpdateChatMessage(roll);
+
+  const result = document.getElementById('dddice-dice-result');
   result.innerText = `TOTAL: ${roll.total_value}`;
-  const canvasTotal = document.getElementById('canvas-total');
+  const canvasTotal = document.getElementById('dddice-canvas-total');
+  canvasTotal.classList.add('dddice');
   canvasTotal.innerText = `${roll.total_value}`;
   canvasTotal.classList.add('fade');
   setTimeout(() => canvasTotal.classList.remove('fade'), 2500);
@@ -405,7 +482,7 @@ function initializeSDK() {
             'Pathbuilder 2e',
           );
           dddice.on(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) => {
-            openSkillRoll();
+            openSkillRoll(roll.label ?? '');
           });
           dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => {
             updateChat(roll);
@@ -442,11 +519,6 @@ function initializeSDK() {
   });
 }
 
-// clear all dice on any click, just like Pathbuilder 2e does
-document.addEventListener('click', () => {
-  //if (dddice && !dddice.isDiceThrowing) dddice.clear();
-});
-
 // @ts-ignore
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
@@ -461,16 +533,17 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 window.addEventListener('load', () => init());
 window.addEventListener('resize', () => init());
 
-// subscribe to any dom mutations and re-run init. May be overkill
-// to observe the body, but getting more specific hooks us into
-// implementation details of Pathbuilder 2e
-const mainObserver = new MutationObserver(() => init());
-mainObserver.observe(document.getElementById('main-container'), {
-  attributes: true,
-  childList: true,
-  subtree: true,
-});
-
+if (document.getElementById('main-container')) {
+  // subscribe to any dom mutations and re-run init. May be overkill
+  // to observe the body, but getting more specific hooks us into
+  // implementation details of Pathbuilder 2e
+  const mainObserver = new MutationObserver(() => init());
+  mainObserver.observe(document.getElementById('main-container'), {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+}
 const modalObserver = new MutationObserver(() => {
   if (document.getElementById('root')) {
     init();
@@ -481,4 +554,20 @@ modalObserver.observe(document.body, {
   attributes: false,
   childList: true,
   subtree: true,
+});
+
+window.addEventListener('message', async event => {
+  log.debug('postMessage', event);
+  log.debug('postMessage: roll object', event?.data?.rollDiceDump);
+  if (event?.data?.rollDiceDump && event?.data?.status === 'pending') {
+    const context =
+      event.data.type === 'weaponDamage'
+        ? ': Damage'
+        : event.data.type === 'weaponAttack'
+        ? ': To Hit'
+        : '';
+    const room = await getStorage('room');
+    await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+    await rollCreate(await pathbuilder2eToDddice(event.data), {}, `${event.data.title}${context}`);
+  }
 });
