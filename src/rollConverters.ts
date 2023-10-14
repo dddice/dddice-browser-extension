@@ -221,9 +221,14 @@ export async function pathbuilder2eToDddice(rollData) {
   let theme = await getStorage('theme');
   theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
   const dice = [];
+  const critDice = [];
 
-  rollData.rollDiceDump.forEach(die => {
+  rollData.rollDiceDump.forEach((die, j) => {
     for (let i = 0; i < die.numDice; i++) {
+      if (rollData.type === 'weaponDamageCritical' && die.extraCritDice === false) {
+        critDice.push(j + i);
+      }
+
       dice.push({
         type: 'd' + die.diceSize,
         theme,
@@ -235,5 +240,7 @@ export async function pathbuilder2eToDddice(rollData) {
     dice.push({ type: 'mod', theme, value: rollData.rollBonus });
   }
 
-  return dice;
+  const operators = critDice ? { '*': { '2': critDice } } : null;
+
+  return { dice, operators };
 }

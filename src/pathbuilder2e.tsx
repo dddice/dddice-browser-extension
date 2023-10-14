@@ -103,8 +103,6 @@ async function init() {
       const inlineRollButtons = document.querySelectorAll('.dice-button.named-roll');
       const profModalRollSection = document.querySelectorAll('.modal .prof-layout');
 
-      const resetButton = document.querySelector('#dice-buttons-1 div');
-
       criticalButton.forEach((element: HTMLElement) => {
         element.style.opacity = '0.5';
         //element.style.pointerEvents = 'none';
@@ -561,13 +559,14 @@ window.addEventListener('message', async event => {
   log.debug('postMessage: roll object', event?.data?.rollDiceDump);
   if (event?.data?.rollDiceDump && event?.data?.status === 'pending') {
     const context =
-      event.data.type === 'weaponDamage'
-        ? ': Damage'
-        : event.data.type === 'weaponAttack'
-        ? ': To Hit'
-        : '';
+      {
+        weaponDamage: ': Damage',
+        weaponAttack: ': To Hit',
+        weaponDamageCritical: ': Critical',
+      }[event.data.type] ?? '';
     const room = await getStorage('room');
     await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
-    await rollCreate(await pathbuilder2eToDddice(event.data), {}, `${event.data.title}${context}`);
+    const { dice, operators } = await pathbuilder2eToDddice(event.data);
+    await rollCreate(dice, operators, `${event.data.title}${context}`);
   }
 });
