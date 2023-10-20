@@ -2,7 +2,11 @@
   "extends": "@parcel/config-webextension",
   "bundler": "@parcel/bundler-experimental",
   "transformers": {
-    "*.svg": ["...", "@parcel/transformer-svg-react"]
+    "*.svg": ["...", "@parcel/transformer-svg-react"],
+    "*.{js,mjs,jsx,cjs,ts,tsx}": [
+      "@parcel/transformer-js",
+      "@parcel/transformer-react-refresh-wrap"
+    ]
   },
   "validators": {
     "*.{ts,tsx}": ["@parcel/validator-typescript"]

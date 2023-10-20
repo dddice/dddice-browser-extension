@@ -7,3 +7,5 @@ dist/
 .parcel-cache/
 /manifest_v2/
 /manifest_v3/
+/coverage/
+/tests/results/jest.xml
