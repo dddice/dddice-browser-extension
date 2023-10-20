@@ -1,12 +1,17 @@
 /** @format */
 
 import { getStorage } from './storage';
-import { Parser } from '@dice-roller/rpg-dice-roller';
 import createLogger from './log';
+import { parseRollEquation } from 'dddice-js';
 
 const log = createLogger('roll converter');
 
 const DEFAULT_THEME = 'dddice-standard';
+
+export async function getThemeSlugFromStorage() {
+  const theme = await getStorage('theme');
+  return theme && theme.id != '' ? theme.id : DEFAULT_THEME;
+}
 
 function convertD100toD10x(theme, value?) {
   if (value) {
@@ -27,9 +32,8 @@ function convertD100toD10x(theme, value?) {
   }
 }
 
-export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
-  let theme = await getStorage('theme');
-  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
+export async function convertRoll20RollToDddiceRoll(roll20Roll: Element, equation: string) {
+  const theme = getThemeSlugFromStorage();
   const dice = [];
   roll20Roll.querySelectorAll('.diceroll').forEach(die => {
     let type = null;
@@ -63,92 +67,50 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element) {
       }
     }
   });
-  return dice;
+  return { dice, operator: convertOperators(equation) };
 }
 
-export async function convertInlineRollToDddiceRoll(equation, result) {
-  let theme = await getStorage('theme');
-  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
-  const dice = [];
-  const parsedEquation = Parser.parse(equation);
-  log.debug('parsed equation', parsedEquation);
-  const values = [];
+export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
+  const [_, equation, result] = inlineRollText
+    .toLowerCase()
+    // replace roll text labels
+    .replace(/\[.*?]/g, '')
+    // replace cs20 and cs1 as our roll parser doesn't understand them
+    .replace(/c[sf]\d+/g, '')
+    .match(/rolling ([%*+\-/^.0-9dkhcsf><=(){}, ]*).* = (.*)/i) ?? [null, null, null];
+  log.debug('roll equation?', _);
+  if (equation && result) {
+    log.debug('equation', equation);
+    log.debug('result', result);
 
-  if (result) {
-    // extract the roll values from the message
-    [...result.matchAll(/<span class="basicdiceroll.*?">(\d+)<\/span>/g)].forEach(die => {
-      log.debug('value', die[1]);
-      const value = parseInt(die[1]);
-      values.push(value);
-    });
+    const values = [];
 
-    (result.match(/\)([+-].\d+)/g) ?? []).forEach(modifier => {
-      log.debug(modifier);
-      values.push(parseInt(modifier[0]));
-    });
+    if (result) {
+      // extract the roll values from the message
+      [...result.matchAll(/<span class="basicdiceroll.*?">(\d+)<\/span>/g)].forEach(die => {
+        log.debug('value', die[1]);
+        const value = parseInt(die[1]);
+        values.push(value);
+      });
 
-    log.debug('values', values);
-  }
-
-  // build the roll object
-  let sign = 1;
-  let dieIndex = 0;
-  let hasDice = false;
-  parsedEquation.forEach(roll => {
-    const stack: any = [];
-
-    let term: any = roll;
-    while (term) {
-      log.debug('term', term);
-      if (term.expressions) {
-        term.expressions.map(i => stack.push(i[0]));
-        log.debug('stack', stack);
-      } else if (term.sides && term.qty) {
-        hasDice = true;
-        for (let i = 0; i < term.qty; i++) {
-          if (result) {
-            if (term.sides === 100) {
-              convertD100toD10x(theme, values[dieIndex++]).map(die => dice.push(die));
-            } else {
-              dice.push({
-                theme,
-                type: `d${term.sides}`,
-                value: parseInt(values[dieIndex++]),
-              });
-            }
-          } else {
-            if (term.sides === 100) {
-              convertD100toD10x(theme).map(die => dice.push(die));
-            } else {
-              dice.push({
-                theme,
-                type: `d${term.sides}`,
-              });
-            }
-          }
+      (result.match(/\)([+-].\d+)/g) ?? []).forEach(modifier => {
+        log.debug(modifier);
+        const value = parseInt(modifier[0]);
+        if (!isNaN(value)) {
+          values.push();
         }
-      } else if (term === '+') {
-        sign = 1;
-      } else if (term === '-') {
-        sign = -1;
-      } else if (!isNaN(sign * parseInt(term))) {
-        dice.push({
-          theme,
-          type: 'mod',
-          value: sign * parseInt(term),
-        });
-      }
-      term = stack.pop();
+      });
+
+      log.debug('values', values);
     }
-  });
-  log.debug('dddice dice', dice);
-  return hasDice ? dice : [];
+    log.debug('equation', equation);
+    return parseRollEquation(equation.replace(' ', '').toLowerCase(), values, theme);
+  }
+  return { dice: [], operator: {} };
 }
 
 export async function convertDiceRollButtons(element: HTMLDivElement, operator, isCritical) {
-  const _theme = await getStorage('theme');
-
-  const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
+  const theme = await getThemeSlugFromStorage();
 
   let text;
   if (element.dataset?.text ?? element.textContent) {
@@ -218,8 +180,7 @@ export async function convertDiceRollButtons(element: HTMLDivElement, operator, 
 }
 
 export async function pathbuilder2eToDddice(rollData) {
-  let theme = await getStorage('theme');
-  theme = theme && theme.id != '' ? theme.id : DEFAULT_THEME;
+  const theme = await getThemeSlugFromStorage();
   const dice = [];
   const critDice = [];
 
@@ -243,4 +204,23 @@ export async function pathbuilder2eToDddice(rollData) {
   const operators = critDice ? { '*': { '2': critDice } } : null;
 
   return { dice, operators };
+}
+
+function convertOperators(equation: string) {
+  const operator = {};
+  const keep = equation.match(/k([lh])?(\d+)?/);
+  if (keep) {
+    if (keep.length > 0) {
+      log.debug('keep.length', keep.length);
+      if (keep.length == 3 && keep[1]) {
+        operator['k'] = `${keep[1]}${keep[2]}`;
+      } else if (keep.length == 3 && keep[2]) {
+        operator['k'] = `h${keep[2]}`;
+      } else {
+        operator['k'] = 'h1';
+      }
+    }
+    log.debug(operator);
+    return operator;
+  }
 }

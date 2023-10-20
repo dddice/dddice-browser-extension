@@ -5,7 +5,11 @@ import ReactDOM from 'react-dom/client';
 import browser from 'webextension-polyfill';
 
 import createLogger from './log';
-import { convertInlineRollToDddiceRoll, convertRoll20RollToDddiceRoll } from './rollConverters';
+import {
+  convertRoll20RollToDddiceRoll,
+  getThemeSlugFromStorage,
+  processRoll20InlineRollText,
+} from './rollConverters';
 import { getStorage, setStorage } from './storage';
 import {
   IDiceRoll,
@@ -44,8 +48,13 @@ function init() {
   if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
 }
 
-async function rollCreate(dice: IDiceRoll[], external_id: string, node: Element, equation: string) {
-  const operator = convertOperators(equation);
+async function rollCreate(
+  dice: IDiceRoll[],
+  external_id: string,
+  node: Element,
+  equation: string,
+  operator,
+) {
   const room = await getStorage('room');
   log.debug('dice.length', dice.length);
   if (dice.length > 0) {
@@ -189,25 +198,6 @@ function domElementIsInClass(node, classNames) {
   return classNameArray.reduce((prev, current) => prev && node.classList?.contains(current), true);
 }
 
-function convertOperators(equation: string) {
-  const operator = {};
-  const keep = equation.match(/k([lh])?(\d+)?/);
-  if (keep) {
-    if (keep.length > 0) {
-      log.debug('keep.length', keep.length);
-      if (keep.length == 3 && keep[1]) {
-        operator['k'] = `${keep[1]}${keep[2]}`;
-      } else if (keep.length == 3 && keep[2]) {
-        operator['k'] = `h${keep[2]}`;
-      } else {
-        operator['k'] = 'h1';
-      }
-    }
-    log.debug(operator);
-    return operator;
-  }
-}
-
 function messageRollType(node: Element) {
   if (domElementIsInClass(node, 'message.rollresult')) {
     return RollMessageType.general;
@@ -220,7 +210,6 @@ function messageRollType(node: Element) {
 
 function watchForRollToMake(mutations: MutationRecord[]) {
   let external_id;
-  let dice;
   let equation;
 
   log.info('chat box updated... looking for new rolls');
@@ -290,10 +279,11 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       .querySelector('.formula:not(.formattedformula)')
                       .textContent.split('rolling ')[1];
 
-                    dice = await convertRoll20RollToDddiceRoll(
+                    const { dice, operator } = await convertRoll20RollToDddiceRoll(
                       node.querySelector('.formattedformula'),
+                      equation,
                     );
-                    await rollCreate(dice, external_id, node, equation);
+                    await rollCreate(dice, external_id, node, equation, operator);
                     break;
                   }
 
@@ -301,18 +291,12 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                   case RollMessageType.inline: {
                     const rollNodes = node.querySelectorAll('.inlinerollresult');
                     for (const rollNode of rollNodes) {
-                      let _;
-                      let result;
-                      [_, equation, result] = rollNode
-                        .getAttribute('title')
-                        .replace(/\[.*?]/g, '')
-                        .match(/rolling ([%*+\-/^.0-9dkh(){},]*).* = (.*)/i) ?? [null, null, null];
-                      log.debug('roll equation?', _);
-                      if (equation && result) {
-                        log.debug('convert equation', equation);
-                        dice = await convertInlineRollToDddiceRoll(equation, result);
-                        await rollCreate(dice, external_id, node, equation);
-                      }
+                      const inlineRollText = rollNode.getAttribute('title');
+                      const { dice, operator } = await processRoll20InlineRollText(
+                        inlineRollText,
+                        await getThemeSlugFromStorage(),
+                      );
+                      await rollCreate(dice, external_id, node, equation, operator);
                     }
                     break;
                   }
