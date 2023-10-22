@@ -12,12 +12,14 @@ import {
   ITheme,
   ThreeDDiceAPI,
   IDiceRoll,
+  parseRollEquation,
 } from 'dddice-js';
 
 import notify from './utils/notify';
 import {
   convertDiceRollButtons,
-  convertInlineRollToDddiceRoll,
+  convertDiceEquationToDddiceRoll,
+  getThemeSlugFromStorage,
   pathbuilder2eToDddice,
 } from './rollConverters';
 
@@ -247,7 +249,7 @@ function onDamageRoll(operator = {}, isCritical = false) {
       .reduce((curr, prev) => `${curr}${prev}`, '');
     log.debug('equation damage roll', text);
 
-    const dice = await convertInlineRollToDddiceRoll(text, null);
+    const { dice } = await parseRollEquation(text, await getThemeSlugFromStorage());
 
     log.debug('equation damage roll', dice);
 

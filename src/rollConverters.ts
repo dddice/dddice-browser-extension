@@ -33,41 +33,19 @@ function convertD100toD10x(theme, value?) {
 }
 
 export async function convertRoll20RollToDddiceRoll(roll20Roll: Element, equation: string) {
-  const theme = getThemeSlugFromStorage();
-  const dice = [];
+  const theme = await getThemeSlugFromStorage();
+  const values = [];
   roll20Roll.querySelectorAll('.diceroll').forEach(die => {
-    let type = null;
-    const value = parseInt(die.querySelector('.didroll').textContent);
-    die.classList.forEach(className => {
-      if (className !== 'dropped' && className.startsWith('d')) {
-        type = className;
-      }
-    });
-    if (type === 'd100') {
-      convertD100toD10x(theme, value).map(die => dice.push(die));
-    } else {
-      dice.push({
-        theme,
-        type,
-        value,
-      });
-    }
+    values.push(parseInt(die.querySelector('.didroll').textContent));
   });
-  roll20Roll.childNodes.forEach(node => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      log.debug('modifiers', node.textContent);
-      // @ts-ignore
-      for (const modifier of node.textContent.matchAll(/[-+]\d/g)) {
-        log.debug(modifier);
-        dice.push({
-          theme,
-          type: 'mod',
-          value: parseInt(modifier[0]),
-        });
-      }
-    }
-  });
-  return { dice, operator: convertOperators(equation) };
+
+  equation = equation
+    // replace empty parens () with (0)
+    .replace(/\(\)/g, '(0)')
+    // replace cs20 and cs1 as our roll parser doesn't understand them
+    .replace(/c[sf]\d+/g, '');
+
+  return parseRollEquation(equation, theme, values);
 }
 
 export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
@@ -75,6 +53,8 @@ export async function processRoll20InlineRollText(inlineRollText: string, theme:
     .toLowerCase()
     // replace roll text labels
     .replace(/\[.*?]/g, '')
+    // replace empty parens () with (0)
+    .replace(/\(\)/g, '(0)')
     // replace cs20 and cs1 as our roll parser doesn't understand them
     .replace(/c[sf]\d+/g, '')
     .match(/rolling ([%*+\-/^.0-9dkhcsf><=(){}, ]*).* = (.*)/i) ?? [null, null, null];
@@ -104,7 +84,7 @@ export async function processRoll20InlineRollText(inlineRollText: string, theme:
       log.debug('values', values);
     }
     log.debug('equation', equation);
-    return parseRollEquation(equation.replace(' ', '').toLowerCase(), values, theme);
+    return parseRollEquation(equation.replace(' ', '').toLowerCase(), theme, values);
   }
   return { dice: [], operator: {} };
 }

@@ -11,6 +11,7 @@ describe('Roll20 Pathfinder Character Sheet', () => {
     expect(dice).toEqual([
       { theme: 'test-theme', type: 'd20', value: 5 },
       { type: 'mod', value: 2 },
+      { type: 'mod', value: 0 },
     ]);
     expect(operator).toEqual({});
   });
@@ -20,7 +21,11 @@ describe('Roll20 Pathfinder Character Sheet', () => {
       '<img src="/images/quantumrollwhite.png" class="inlineqroll"> Rolling 1d20cs20cf1 + [ ] (0)[MODIFIER] + (0)[BONUS] = (<span class="basicdiceroll">18</span>)+(0)+(0)',
       'test-theme',
     );
-    expect(dice).toEqual([{ theme: 'test-theme', type: 'd20', value: 18 }]);
+    expect(dice).toEqual([
+      { theme: 'test-theme', type: 'd20', value: 18 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+    ]);
     expect(operator).toEqual({});
   });
 
@@ -33,6 +38,7 @@ describe('Roll20 Pathfinder Character Sheet', () => {
       { theme: 'test-theme', type: 'd20', value: 4 },
       { type: 'mod', value: 2 },
       { type: 'mod', value: -10 },
+      { type: 'mod', value: 0 },
     ]);
     expect(operator).toEqual({});
   });
@@ -45,6 +51,8 @@ describe('Roll20 Pathfinder Character Sheet', () => {
     expect(dice).toEqual([
       { theme: 'test-theme', type: 'd20', value: 11 },
       { type: 'mod', value: 5 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
     ]);
     expect(operator).toEqual({});
   });
@@ -58,6 +66,8 @@ describe('Roll20 Pathfinder Character Sheet', () => {
       { theme: 'test-theme', type: 'd20', value: 3 },
       { type: 'mod', value: 5 },
       { type: 'mod', value: -4 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
     ]);
     expect(operator).toEqual({});
   });
@@ -70,6 +80,10 @@ describe('Roll20 Pathfinder Character Sheet', () => {
     expect(dice).toEqual([
       { theme: 'test-theme', type: 'd6', value: 4 },
       { type: 'mod', value: 2 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
     ]);
     expect(operator).toEqual({});
   });
@@ -82,9 +96,28 @@ describe('Roll20 Pathfinder Character Sheet', () => {
     expect(dice).toEqual([
       { theme: 'test-theme', type: 'd6', value: 4 },
       { type: 'mod', value: 2 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
       { theme: 'test-theme', type: 'd8', value: 1 },
     ]);
-    expect(operator).toEqual({ '*': { '2': [0, 1] } });
+    expect(operator).toEqual({ '*': { '2': [0, 1, 2, 3, 4, 5] } });
+  });
+
+  it('Custom Spell', async () => {
+    const { dice, operator } = await processRoll20InlineRollText(
+      '<img src="/images/quantumrollwhite.png" class="inlineqroll"> Rolling 1d6 + (0)[ABILITY MODIFIER] + ()[MISC] + (0)[OTHER] + (0)[BONUS TO DAMAGE] = (<span class="basicdiceroll critfail ">1</span>)+(0)+(0)',
+      'test-theme',
+    );
+    expect(dice).toEqual([
+      { theme: 'test-theme', type: 'd6', value: 1 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+      { type: 'mod', value: 0 },
+    ]);
+    expect(operator).toEqual({});
   });
 });
 

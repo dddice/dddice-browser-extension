@@ -2,19 +2,13 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import browser from 'webextension-polyfill';
 
 import createLogger from './log';
-import {
-  convertRoll20RollToDddiceRoll,
-  getThemeSlugFromStorage,
-  processRoll20InlineRollText,
-} from './rollConverters';
+import { convertRoll20RollToDddiceRoll, processRoll20InlineRollText } from './rollConverters';
 import { getStorage, setStorage } from './storage';
 import {
   IDiceRoll,
   IRoll,
-  IRollValue,
   IRoom,
   ITheme,
   IUser,
@@ -122,11 +116,9 @@ function generateChatMessageTemplate(roll: IRoll) {
     participant => participant.user.uuid === roll.user.uuid,
   ).username;
 
-  const template = `&{template:default} {{roller=${characterName}}}  {{${roll.label ?? 'roll'}=[[ ${
+  return `&{template:default} {{roller=${characterName}}}  {{${roll.label ?? 'roll'}=[[ ${
     roll.total_value
   } [${roll.equation}]]]}} {{source=dddice}}`;
-
-  return template;
 }
 
 function generateChatMessage(roll: IRoll) {
@@ -260,6 +252,10 @@ function watchForRollToMake(mutations: MutationRecord[]) {
       .forEach(mutation => {
         mutation.addedNodes.forEach(async (node: Element) => {
           if (node.querySelector) {
+            setTimeout(() => {
+              node.classList.remove('hidden');
+              removeLoadingMessage();
+            }, 1500);
             // look for roll messages
             const rollMessageType: RollMessageType = messageRollType(node);
             if (
@@ -294,20 +290,14 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       const inlineRollText = rollNode.getAttribute('title');
                       const { dice, operator } = await processRoll20InlineRollText(
                         inlineRollText,
-                        await getThemeSlugFromStorage(),
+                        'dddice-bees',
                       );
+                      log.info('poop', dice);
                       await rollCreate(dice, external_id, node, equation, operator);
                     }
                     break;
                   }
                 }
-              } else {
-                // set a timer and unhide the message after a bit,
-                // as a kludge for players not using the plugin
-                setTimeout(() => {
-                  node.classList.remove('hidden');
-                  removeLoadingMessage();
-                }, 1500);
               }
             }
           }
