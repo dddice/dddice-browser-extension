@@ -6,7 +6,7 @@ import { parseRollEquation } from 'dddice-js';
 
 const log = createLogger('roll converter');
 
-const DEFAULT_THEME = 'dddice-standard';
+const DEFAULT_THEME = 'dddice-bees';
 
 export async function getThemeSlugFromStorage() {
   const theme = await getStorage('theme');

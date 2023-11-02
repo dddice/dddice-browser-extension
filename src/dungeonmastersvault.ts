@@ -25,7 +25,7 @@ log.info('DDDICE DUNGEON MASTERS VAULT');
 const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
 let canvasElement: HTMLCanvasElement;
-const DEFAULT_THEME = 'dddice-standard';
+const DEFAULT_THEME = 'dddice-bees';
 
 /**
  * Initialize listeners on all attacks

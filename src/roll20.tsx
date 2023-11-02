@@ -4,7 +4,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import createLogger from './log';
-import { convertRoll20RollToDddiceRoll, processRoll20InlineRollText } from './rollConverters';
+import {
+  convertRoll20RollToDddiceRoll,
+  getThemeSlugFromStorage,
+  processRoll20InlineRollText,
+} from './rollConverters';
 import { getStorage, setStorage } from './storage';
 import {
   IDiceRoll,
@@ -290,7 +294,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       const inlineRollText = rollNode.getAttribute('title');
                       const { dice, operator } = await processRoll20InlineRollText(
                         inlineRollText,
-                        'dddice-bees',
+                        await getThemeSlugFromStorage(),
                       );
                       log.info('poop', dice);
                       await rollCreate(dice, external_id, node, equation, operator);
@@ -304,7 +308,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
         });
       });
   } else {
-    log.info('ignore first update as that is the load of the old chatmessages');
+    log.info('ignore first update as that is the load of the old chat messages');
     chatHasLoaded = mutations.some(record => record.addedNodes.length > 0);
   }
 }

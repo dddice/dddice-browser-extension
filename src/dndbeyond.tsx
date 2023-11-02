@@ -21,7 +21,7 @@ const FADE_TIMEOUT = 100;
 let dddice: ThreeDDice;
 let canvasElement: HTMLCanvasElement;
 let customRoll: Record<string, number> = {};
-const DEFAULT_THEME = 'dddice-standard';
+const DEFAULT_THEME = 'dddice-bees';
 let characterId;
 let user: IUser;
 
