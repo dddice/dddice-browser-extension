@@ -239,37 +239,40 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     return sdkBridge.preloadTheme(theme);
   };
 
-  const onJoinRoom = useCallback(async (roomSlug: string, passcode?: string) => {
-    if (roomSlug) {
-      setLoadingMessage('Joining room');
-      pushLoading();
-      await createGuestAccountIfNeeded();
-      const room = state.rooms && state.rooms.find(r => r.slug === roomSlug);
-      if (room) {
-        onChangeRoom(room);
-      } else {
-        let newRoom;
-        try {
-          newRoom = (await api.current.room.join(roomSlug, passcode)).data;
-        } catch (error) {
-          setError('could not join room');
-          clearLoading();
-          throw error;
+  const onJoinRoom = useCallback(
+    async (roomSlug: string, passcode?: string) => {
+      if (roomSlug) {
+        setLoadingMessage('Joining room');
+        pushLoading();
+        await createGuestAccountIfNeeded();
+        const room = state.rooms && state.rooms.find(r => r.slug === roomSlug);
+        if (room) {
+          onChangeRoom(room);
+        } else {
+          let newRoom;
+          try {
+            newRoom = (await api.current.room.join(roomSlug, passcode)).data;
+          } catch (error) {
+            setError('could not join room');
+            clearLoading();
+            throw error;
+          }
+          if (newRoom) {
+            await storageProvider.setStorage({
+              rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom],
+            });
+            setState((storage: IStorage) => ({
+              ...storage,
+              rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
+            }));
+            await onChangeRoom(newRoom);
+          }
         }
-        if (newRoom) {
-          await storageProvider.setStorage({
-            rooms: state.rooms ? [...state.rooms, newRoom] : [newRoom],
-          });
-          setState((storage: IStorage) => ({
-            ...storage,
-            rooms: storage.rooms ? [...storage.rooms, newRoom] : [newRoom],
-          }));
-          await onChangeRoom(newRoom);
-        }
+        popLoading();
       }
-      popLoading();
-    }
-  }, []);
+    },
+    [state],
+  );
 
   const onChangeRoom = useCallback(
     async (room: IRoom) => {
@@ -297,6 +300,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     try {
       newRoom = (await api.current.room.create()).data;
     } catch (error) {
+      console.error('count not create room 1');
       setError('could not create room');
       clearLoading();
       throw error;
@@ -378,12 +382,13 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         }));
         await storageProvider.setStorage({ apiKey });
       } catch (error) {
+        console.error('count not create room 2');
         setError('could not create room');
         clearLoading();
         throw error;
       }
     }
-  }, []);
+  }, [state]);
 
   /**
    * Render
