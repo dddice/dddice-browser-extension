@@ -71,7 +71,6 @@ async function rollCreate(
       removeLoadingMessage();
     } else {
       try {
-        //await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
         const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
         node.setAttribute('data-dddice-roll-uuid', roll.uuid);
       } catch (e) {
@@ -251,6 +250,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
     });
 
   if (chatHasLoaded) {
+    const shouldClear = true;
     mutations
       .filter(record => record.addedNodes.length > 0)
       .forEach(mutation => {
@@ -270,6 +270,12 @@ function watchForRollToMake(mutations: MutationRecord[]) {
               log.info('found a roll', node);
               node.classList.add('hidden');
               addLoadingMessage();
+              if (shouldClear && dddice?.api) {
+                const room = await getStorage('room');
+                if (room) {
+                  await dddice.api.room.updateRolls(room.slug, { is_cleared: true });
+                }
+              }
               external_id = node.getAttribute('data-messageid');
 
               if (node.classList.contains('you')) {
