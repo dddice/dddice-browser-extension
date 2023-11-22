@@ -256,6 +256,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
       .filter(record => record.addedNodes.length > 0)
       .forEach(mutation => {
         mutation.addedNodes.forEach(async (node: Element) => {
+          const theme = await getThemeSlugFromStorage();
           if (node.querySelector) {
             setTimeout(() => {
               node.classList.remove('hidden');
@@ -282,13 +283,10 @@ function watchForRollToMake(mutations: MutationRecord[]) {
               if (node.classList.contains('you')) {
                 switch (rollMessageType) {
                   case RollMessageType.general: {
-                    equation = node
-                      .querySelector('.formula:not(.formattedformula)')
-                      .textContent.split('rolling ')[1];
-
                     const { dice, operator } = await convertRoll20RollToDddiceRoll(
-                      node.querySelector('.formattedformula'),
+                      node,
                       equation,
+                      theme,
                     );
                     await rollCreate(dice, external_id, node, operator);
                     break;
@@ -301,7 +299,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       const inlineRollText = rollNode.getAttribute('title');
                       const { dice, operator } = await processRoll20InlineRollText(
                         inlineRollText,
-                        await getThemeSlugFromStorage(),
+                        theme,
                       );
                       await rollCreate(dice, external_id, node, operator);
                     }

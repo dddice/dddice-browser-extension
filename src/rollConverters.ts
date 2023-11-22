@@ -32,43 +32,10 @@ function convertD100toD10x(theme, value?) {
   }
 }
 
-export async function convertRoll20RollToDddiceRoll(roll20Roll: Element, equation: string) {
-  const theme = await getThemeSlugFromStorage();
-  const values = [];
-  roll20Roll.querySelectorAll('.diceroll').forEach(die => {
-    values.push(parseInt(die.querySelector('.didroll').textContent));
-  });
-
-  equation = equation
-    // remove spaces
-    .replace(/\s+/g, '')
-    // +- -> -
-    .replace(/\+-/g, '-')
-    // remove roll text labels
-    .replace(/\[.*?]/g, '')
-    // replace empty parens () with (0)
-    .replace(/\(\)/g, '(0)')
-    // remove unsupported operators
-    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|[+\- ]|$)/g, '')
-    // replace comparators as we don't understand those
-    .replace(/[><=]=?\d+/g, '')
-    // add implied 1 for kh dh kl & dl
-    .replace(/([kd][hl])(\D)/g, '$11$2')
-    // replace cs20 and cs1 as our roll parser doesn't understand them
-    .replace(/c[sf]\d+/g, '');
-
-  return parseRollEquation(equation, theme, values);
-}
-
-export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
-  //@ts-ignore
-  const [_, e, result] = inlineRollText
+const removeUnsupportedRoll20Operators = (equation: string): string =>
+  equation
+    .replace(' ', '')
     .toLowerCase()
-    // remove roll text labels
-    .replace(/\[.*?]/g, '')
-    .match(/rolling (.*) = (.*)/i) ?? [null, null, null];
-  log.debug('roll equation?', _);
-  const equation = e
     // replace empty parens () with (0)
     .replace(/\(\)/g, '(0)')
     // remove spaces
@@ -85,6 +52,30 @@ export async function processRoll20InlineRollText(inlineRollText: string, theme:
     .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|$)/g, '')
     // add implied 1 for kh dh kl & dl
     .replace(/([kd][hl])(\D)/g, '$11$2');
+
+export async function convertRoll20RollToDddiceRoll(node: Element, theme: string) {
+  const equation = node
+    .querySelector('.formula:not(.formattedformula)')
+    .textContent.split('rolling ')[1];
+  const values = [];
+  node
+    .querySelector('.formattedformula')
+    .querySelectorAll('.diceroll')
+    .forEach(die => {
+      values.push(parseInt(die.querySelector('.didroll').textContent));
+    });
+
+  return parseRollEquation(removeUnsupportedRoll20Operators(equation), theme, values);
+}
+
+export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
+  //@ts-ignore
+  const [_, equation, result] = inlineRollText
+    .toLowerCase()
+    // remove roll text labels
+    .replace(/\[.*?]/g, '')
+    .match(/rolling (.*) = (.*)/i) ?? [null, null, null];
+  log.debug('roll equation?', _);
 
   if (equation && result) {
     log.debug('equation', equation);
@@ -111,7 +102,7 @@ export async function processRoll20InlineRollText(inlineRollText: string, theme:
       log.debug('values', values);
     }
     log.debug('equation', equation);
-    return parseRollEquation(equation.replace(' ', '').toLowerCase(), theme, values);
+    return parseRollEquation(removeUnsupportedRoll20Operators(equation), theme, values);
   }
   return { dice: [], operator: {} };
 }
