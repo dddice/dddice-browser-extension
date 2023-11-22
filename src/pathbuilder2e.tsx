@@ -18,7 +18,6 @@ import {
 import notify from './utils/notify';
 import {
   convertDiceRollButtons,
-  convertDiceEquationToDddiceRoll,
   getThemeSlugFromStorage,
   pathbuilder2eToDddice,
 } from './rollConverters';

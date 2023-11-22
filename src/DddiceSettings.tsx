@@ -17,14 +17,11 @@ import Room from './components/Room';
 import ThemeSelection from './components/ThemeSelection';
 import Theme from './components/Theme';
 
-import createLogger from './log';
 import StorageProvider from './StorageProvider';
 import SdkBridge from './SdkBridge';
 import PermissionProvider from './PermissionProvider';
 import Toggle from './components/Toggle';
 import { CustomConfiguration } from './schema/custom_configuration';
-
-const log = createLogger('App');
 
 export interface IStorage {
   apiKey?: string;
@@ -183,7 +180,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       setLoadingMessage('refreshing room data');
       pushLoading();
       const room = (await api.current.room.get(state.room.slug)).data;
-      storageProvider.setStorage({ room });
+      if (permissionProvider.canChangeRoom()) {
+        storageProvider.setStorage({ room });
+      }
       setState(state => ({ ...state, room }));
       popLoading();
     }
@@ -285,7 +284,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
 
       ReactTooltip.hide();
       if (room) {
-        await storageProvider.setStorage({ room });
+        if (permissionProvider.canChangeRoom()) {
+          await storageProvider.setStorage({ room });
+        }
         await reloadDiceEngine();
       }
     },
@@ -319,7 +320,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       ...storage,
       room: newRoom,
     }));
-    await storageProvider.setStorage({ room: newRoom });
+    if (permissionProvider.canChangeRoom()) {
+      await storageProvider.setStorage({ room: newRoom });
+    }
     popLoading();
     await reloadDiceEngine();
   }, [state.rooms]);
@@ -382,7 +385,6 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         }));
         await storageProvider.setStorage({ apiKey });
       } catch (error) {
-        console.error('count not create room 2');
         setError('could not create room');
         clearLoading();
         throw error;
@@ -401,7 +403,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
           <div className="flex flex-row items-baseline justify-center">
             {isEnterApiKey ? (
               <span
-                className="text-gray-700 text-xxs mr-auto"
+                className="text-gray-700 text-xxs mr-auto cursor-pointer"
                 onClick={() => setIsEnterApiKey(false)}
               >
                 <Back className="flex h-4 w-4 m-auto" data-tip="Back" data-place="right" />

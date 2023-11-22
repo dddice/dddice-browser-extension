@@ -2,6 +2,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// @ts-ignore
 import browser from 'webextension-polyfill';
 
 import createLogger from './log';
@@ -803,7 +804,7 @@ async function initializeSDK() {
 
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (dddice && !dddice.isDiceThrowing) dddice.clear();
+  if (dddice && !dddice?.isDiceThrowing) dddice.clear();
 });
 
 // @ts-ignore

@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import classNames from 'classnames';
 
 export default ({ onChange, value = false }) => {

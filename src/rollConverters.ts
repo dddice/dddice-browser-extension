@@ -40,8 +40,20 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element, equatio
   });
 
   equation = equation
+    // remove spaces
+    .replace(/\s+/g, '')
+    // +- -> -
+    .replace(/\+-/g, '-')
+    // remove roll text labels
+    .replace(/\[.*?]/g, '')
     // replace empty parens () with (0)
     .replace(/\(\)/g, '(0)')
+    // remove unsupported operators
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|[+\- ]|$)/g, '')
+    // replace comparators as we don't understand those
+    .replace(/[><=]=?\d+/g, '')
+    // add implied 1 for kh dh kl & dl
+    .replace(/([kd][hl])(\D)/g, '$11$2')
     // replace cs20 and cs1 as our roll parser doesn't understand them
     .replace(/c[sf]\d+/g, '');
 
@@ -49,16 +61,31 @@ export async function convertRoll20RollToDddiceRoll(roll20Roll: Element, equatio
 }
 
 export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
-  const [_, equation, result] = inlineRollText
+  //@ts-ignore
+  const [_, e, result] = inlineRollText
     .toLowerCase()
-    // replace roll text labels
+    // remove roll text labels
     .replace(/\[.*?]/g, '')
+    .match(/rolling (.*) = (.*)/i) ?? [null, null, null];
+  log.debug('roll equation?', _);
+  const equation = e
     // replace empty parens () with (0)
     .replace(/\(\)/g, '(0)')
-    // replace cs20 and cs1 as our roll parser doesn't understand them
-    .replace(/c[sf]\d+/g, '')
-    .match(/rolling ([%*+\-/^.0-9dkhcsf><=(){}, ]*).* = (.*)/i) ?? [null, null, null];
-  log.debug('roll equation?', _);
+    // remove spaces
+    .replace(/\s+/g, '')
+    // +- -> -
+    .replace(/\+-/g, '-')
+    // replace comparators as we don't understand those
+    .replace(/(cs|cf)\d+/g, '')
+    // replace comparators as we don't understand those
+    .replace(/(cs|cf)?[><=]=?\d+/g, '')
+    // remove unsupported operators
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)([+-])/g, '$2')
+    // remove unsupported operators
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|$)/g, '')
+    // add implied 1 for kh dh kl & dl
+    .replace(/([kd][hl])(\D)/g, '$11$2');
+
   if (equation && result) {
     log.debug('equation', equation);
     log.debug('result', result);
@@ -170,10 +197,21 @@ export async function pathbuilder2eToDddice(rollData) {
         critDice.push(j + i);
       }
 
-      dice.push({
-        type: 'd' + die.diceSize,
-        theme,
-      });
+      if (die.diceSize === 100) {
+        dice.push({
+          type: 'd10',
+          theme,
+        });
+        dice.push({
+          type: 'd10x',
+          theme,
+        });
+      } else {
+        dice.push({
+          type: 'd' + die.diceSize,
+          theme,
+        });
+      }
     }
   });
 
@@ -184,23 +222,4 @@ export async function pathbuilder2eToDddice(rollData) {
   const operators = critDice ? { '*': { '2': critDice } } : null;
 
   return { dice, operators };
-}
-
-function convertOperators(equation: string) {
-  const operator = {};
-  const keep = equation.match(/k([lh])?(\d+)?/);
-  if (keep) {
-    if (keep.length > 0) {
-      log.debug('keep.length', keep.length);
-      if (keep.length == 3 && keep[1]) {
-        operator['k'] = `${keep[1]}${keep[2]}`;
-      } else if (keep.length == 3 && keep[2]) {
-        operator['k'] = `h${keep[2]}`;
-      } else {
-        operator['k'] = 'h1';
-      }
-    }
-    log.debug(operator);
-    return operator;
-  }
 }

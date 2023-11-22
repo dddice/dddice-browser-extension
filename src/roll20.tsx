@@ -2,6 +2,8 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// @ts-ignore
+import browser from 'webextension-polyfill';
 
 import createLogger from './log';
 import {
@@ -16,6 +18,7 @@ import {
   IRoom,
   ITheme,
   IUser,
+  Operator,
   ThreeDDice,
   ThreeDDiceAPI,
   ThreeDDiceRollEvent,
@@ -50,13 +53,11 @@ async function rollCreate(
   dice: IDiceRoll[],
   external_id: string,
   node: Element,
-  equation: string,
-  operator,
+  operator: Operator,
 ) {
   const room = await getStorage('room');
   log.debug('dice.length', dice.length);
   if (dice.length > 0) {
-    log.info('the die is cast', equation);
     if (!dddice?.api) {
       notify(
         `dddice extension hasn't been set up yet. Please open the the extension pop up via the extensions menu`,
@@ -289,7 +290,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                       node.querySelector('.formattedformula'),
                       equation,
                     );
-                    await rollCreate(dice, external_id, node, equation, operator);
+                    await rollCreate(dice, external_id, node, operator);
                     break;
                   }
 
@@ -302,8 +303,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                         inlineRollText,
                         await getThemeSlugFromStorage(),
                       );
-                      log.info('poop', dice);
-                      await rollCreate(dice, external_id, node, equation, operator);
+                      await rollCreate(dice, external_id, node, operator);
                     }
                     break;
                   }
@@ -427,7 +427,7 @@ let user: IUser;
 let isSendingMessage: boolean = false;
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (!dddice?.isDiceThrowing && !isSendingMessage) dddice.clear();
+  if (dddice && !dddice?.isDiceThrowing && !isSendingMessage) dddice.clear();
 });
 
 // add canvas element to document

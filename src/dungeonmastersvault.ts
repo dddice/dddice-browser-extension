@@ -1,5 +1,6 @@
 /** @format */
 
+// @ts-ignore
 import browser from 'webextension-polyfill';
 
 import createLogger from './log';
@@ -384,7 +385,7 @@ function initializeSDK() {
 
 // clear all dice on any click, just like d&d beyond does
 document.addEventListener('click', () => {
-  if (dddice && !dddice.isDiceThrowing) dddice.clear();
+  if (dddice && !dddice?.isDiceThrowing) dddice.clear();
 });
 
 // @ts-ignore

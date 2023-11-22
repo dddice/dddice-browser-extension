@@ -193,4 +193,25 @@ describe('Roll 20 D&D Character Sheet', () => {
     expect(dice).toEqual([{ theme: 'test-theme', type: 'd10', value: 5 }]);
     expect(operator).toEqual({});
   });
+
+  it('Reroll Damage', async () => {
+    const { dice, operator } = await processRoll20InlineRollText(
+      '<img src="/images/quantumrollwhite.png" class="inlineqroll"> Rolling 1d10rr+3 = (<span class="basicdiceroll">5</span>)"',
+      'test-theme',
+    );
+    expect(dice).toEqual([
+      { theme: 'test-theme', type: 'd10', value: 5 },
+      { type: 'mod', value: 3 },
+    ]);
+    expect(operator).toEqual({});
+  });
+
+  it('Round Damage', async () => {
+    const { dice, operator } = await processRoll20InlineRollText(
+      '<img src="/images/quantumrollwhite.png" class="inlineqroll"> Rolling round(1d10) = (<span class="basicdiceroll">5</span>)"',
+      'test-theme',
+    );
+    expect(dice).toEqual([{ theme: 'test-theme', type: 'd10', value: 5 }]);
+    expect(operator).toEqual({ round: 'nearest' });
+  });
 });
