@@ -28,7 +28,7 @@ _Released {{ timestamp | date(format="%Y-%m-%d") }}_
 trim = false
 # changelog footer
 footer = """
-Install the browser extension from:
+Each browser extnesion store takes a different amonut of time to review. Once complete your extension will auto update!
 
 * Chrome Web Store 👉 https://chrome.google.com/webstore/detail/dddice/npmficphbhbhebhjfekjopgkpojjcfem
 * Edge Add-ins Store 👉 https://microsoftedge.microsoft.com/addons/detail/dddice/lphfbgpflpoenhfbffkmpjpepmcpcnnj

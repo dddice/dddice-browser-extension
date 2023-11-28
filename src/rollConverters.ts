@@ -47,11 +47,11 @@ const removeUnsupportedRoll20Operators = (equation: string): string =>
     // replace comparators as we don't understand those
     .replace(/(cs|cf)?[><=]=?\d+/g, '')
     // remove unsupported operators
-    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)([+-])/g, '$2')
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)([+\-,])/g, '$2')
     // remove unsupported operators
     .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|$)/g, '')
     // add implied 1 for kh dh kl & dl
-    .replace(/([kd][hl])(\D)/g, '$11$2');
+    .replace(/([kd][hl])(\D|$)/g, '$11$2');
 
 export async function convertRoll20RollToDddiceRoll(node: Element, theme: string) {
   const equation = node

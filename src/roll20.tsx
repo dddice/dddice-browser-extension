@@ -283,11 +283,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
               if (node.classList.contains('you')) {
                 switch (rollMessageType) {
                   case RollMessageType.general: {
-                    const { dice, operator } = await convertRoll20RollToDddiceRoll(
-                      node,
-                      equation,
-                      theme,
-                    );
+                    const { dice, operator } = await convertRoll20RollToDddiceRoll(node, theme);
                     await rollCreate(dice, external_id, node, operator);
                     break;
                   }

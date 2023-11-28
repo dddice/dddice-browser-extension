@@ -17,6 +17,20 @@ describe('Roll20 /roll', () => {
     });
   });
 
+  it('2d20kh', async () => {
+    const element = document.createElement('div');
+    element.innerHTML =
+      '<div class="message rollresult you player--NIQ1NLsipuivg28Shbz quantumRoll" data-messageid="-NjrBORWdQf1u3Ja0jpv" data-playerid="-NIQ1NLsipuivg28Shbz"><div class="formula" style="margin-bottom: 3px;">rolling 2d20kh</div><div class="clear"></div><div class="formula formattedformula"><div class="dicegrouping ui-sortable" data-groupindex="0">(<div data-origindex="0" class="diceroll d20"><div class="dicon"><div class="didroll">12</div><div class="backing"></div></div>+</div><div data-origindex="1" class="diceroll d20 dropped "><div class="dicon"><div class="didroll">9</div><div class="backing"></div></div></div>)</div><div class="clear"></div></div><div class="clear"></div><strong>=</strong><div class="rolled ui-draggable ui-draggable-handle">12</div></div>';
+    const actual = await convertRoll20RollToDddiceRoll(element, 'test-theme');
+    expect(actual).toEqual({
+      dice: [
+        { theme: 'test-theme', type: 'd20', value: 12 },
+        { theme: 'test-theme', type: 'd20', value: 9 },
+      ],
+      operator: { k: 'h1' },
+    });
+  });
+
   it('round(3d6/3)', async () => {
     const element = document.createElement('div');
     element.innerHTML =
