@@ -68,6 +68,13 @@ export async function convertRoll20RollToDddiceRoll(node: Element, theme: string
   return parseRollEquation(removeUnsupportedRoll20Operators(equation), theme, values);
 }
 
+export async function convertRoll20DnD2024RollToDddiceRoll(node: Element, theme: string) {
+  const equation = node.querySelector('.rt-formula__raw').textContent;
+  const values = node.querySelector('.rt-formula__evaluated-string').textContent.split(/[+-]/);
+
+  return parseRollEquation(removeUnsupportedRoll20Operators(equation), theme, values);
+}
+
 export async function processRoll20InlineRollText(inlineRollText: string, theme: string) {
   //@ts-ignore
   const [_, equation, result] = inlineRollText

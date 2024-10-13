@@ -7,6 +7,7 @@ import browser from 'webextension-polyfill';
 
 import createLogger from './log';
 import {
+  convertRoll20DnD2024RollToDddiceRoll,
   convertRoll20RollToDddiceRoll,
   getThemeSlugFromStorage,
   processRoll20InlineRollText,
@@ -33,6 +34,7 @@ enum RollMessageType {
   inline,
   CoC,
   DnD5e,
+  DnD2024,
 }
 
 const log = createLogger('Roll20');
@@ -72,6 +74,7 @@ async function rollCreate(
       removeLoadingMessage();
     } else {
       try {
+        log.debug('the die is cast');
         const roll: IRoll = (await dddice.api.roll.create(dice, { operator, external_id })).data;
         node.setAttribute('data-dddice-roll-uuid', roll.uuid);
       } catch (e) {
@@ -194,14 +197,20 @@ function domElementIsInClass(node, classNames) {
   return classNameArray.reduce((prev, current) => prev && node.classList?.contains(current), true);
 }
 
-function messageRollType(node: Element) {
+function messageRollType(node: Element): RollMessageType {
   if (domElementIsInClass(node, 'message.rollresult')) {
     return RollMessageType.general;
-  } else if (node.querySelector('.sheet-coc-roll__container')) {
+  }
+  if (node.querySelector('.sheet-coc-roll__container')) {
     return RollMessageType.CoC;
-  } else if (node.querySelector('.inlinerollresult ')) {
+  }
+  if (node.querySelector('.inlinerollresult ')) {
     return RollMessageType.inline;
   }
+  if (node.querySelector('.dnd-2024--roll')) {
+    return RollMessageType.DnD2024;
+  }
+  return RollMessageType.not_a_roll;
 }
 
 function watchForRollToMake(mutations: MutationRecord[]) {
@@ -280,10 +289,21 @@ function watchForRollToMake(mutations: MutationRecord[]) {
               }
               external_id = node.getAttribute('data-messageid');
 
-              if (node.classList.contains('you')) {
+              if (node.classList.contains('you') && document.body.contains(node)) {
                 switch (rollMessageType) {
                   case RollMessageType.general: {
                     const { dice, operator } = await convertRoll20RollToDddiceRoll(node, theme);
+                    log.debug('roll create 5e');
+                    await rollCreate(dice, external_id, node, operator);
+                    break;
+                  }
+
+                  case RollMessageType.DnD2024: {
+                    const { dice, operator } = await convertRoll20DnD2024RollToDddiceRoll(
+                      node,
+                      theme,
+                    );
+                    log.debug('roll create 2024');
                     await rollCreate(dice, external_id, node, operator);
                     break;
                   }
@@ -297,6 +317,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                         inlineRollText,
                         theme,
                       );
+                      log.debug('roll create2');
                       await rollCreate(dice, external_id, node, operator);
                     }
                     break;
