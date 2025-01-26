@@ -77,7 +77,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   /**
    * Connected
    */
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   /**
    * Error
@@ -101,9 +101,8 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   useEffect(() => {
     async function connect() {
       const platform = await sdkBridge.detectPlatform();
-
+      setIsConnected(true);
       if (platform) {
-        setIsConnected(true);
         setVTT(platform);
       }
     }
