@@ -39,7 +39,7 @@ function getCharacterID(): string | null {
 }
 
 function scheduleCheckHealth(): void {
-  setTimeout(checkHealth, 1000);
+  //setTimeout(checkHealth, 1000);
 }
 
 function hideSideBar(): void {
