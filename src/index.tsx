@@ -8,6 +8,7 @@ import SdkBridge from './SdkBridge';
 import PermissionProvider from './PermissionProvider';
 
 import DddiceSettings from './DddiceSettings';
+import React from 'react';
 
 const root = ReactDOM.createRoot(document.getElementById('dddice'));
 root.render(

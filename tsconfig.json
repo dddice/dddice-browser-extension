@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "paths": {
+      //"@/components/*": ["src/components/*"],
+      "@@/*": ["src/ts/*"],
+      //"@@/Components": ["src/ts/Components"],
+      "@@/Components/*": ["src/ts/Components/*"],
+      "@dice": ["node_modules/dddice-js/resources/js/@dice"],
+      "@dice/*": ["node_modules/dddice-js/resources/js/@dice/*"]
+    },
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "declaration": true,
+    "declarationDir": "public/js/types",
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "lib": ["dom", "es6", "esnext"],
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveConstEnums": true,
+    "resolveJsonModule": true,
+    "removeComments": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+    "strictNullChecks": false,
+    "target": "es6",
+    "plugins": [
+      {
+        "transform": "typescript-transform-paths",
+        "afterDeclarations": true
+      }
+    ]
+  },
+  "include": ["src/*"]
+}

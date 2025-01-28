@@ -27,6 +27,8 @@ import {
 
 import imageLogo from 'url:./assets/dddice-48x48.png';
 import notify from './utils/notify';
+import { AxiosError } from 'axios';
+import { APIError, IApiResponse } from 'dddice-js/types';
 
 enum RollMessageType {
   not_a_roll,
@@ -379,7 +381,7 @@ function initializeSDK() {
     getStorage('theme'),
     getStorage('render mode'),
   ]).then(async ([apiKey, room, theme, renderMode]) => {
-    if (apiKey) {
+    if (apiKey && room && theme) {
       log.debug('initializeSDK', renderMode);
       if (dddice) {
         // clear the board
@@ -409,7 +411,9 @@ function initializeSDK() {
           }
         } catch (e) {
           console.error(e);
-          notify(`${e.response?.data?.data?.message ?? e}`);
+          notify(
+            `${(e as AxiosError<IApiResponse<APIError, any>>).response?.data?.data?.message ?? e}`,
+          );
         }
         if (theme) {
           preloadTheme(theme);
@@ -423,7 +427,9 @@ function initializeSDK() {
           }
         } catch (e) {
           console.error(e);
-          notify(`${e.response?.data?.data?.message ?? e}`);
+          notify(
+            `${(e as AxiosError<IApiResponse<APIError, any>>).response?.data?.data?.message ?? e}`,
+          );
         }
         dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
           setTimeout(() => updateChat(roll), 1500),

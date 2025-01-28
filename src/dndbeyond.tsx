@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 // @ts-ignore
-import browser from 'webextension-polyfill';
+//import browser from 'webextension-polyfill';
 
 import createLogger from './log';
 import { getStorage, setStorage } from './storage';
@@ -12,7 +12,7 @@ import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI, IUser } 
 import imageLogo from 'url:./assets/dddice-32x32.png';
 
 import notify from './utils/notify';
-import { HealthMessage } from './schema/health_message';
+import apiKeyEntry from './components/ApiKeyEntry';
 
 const log = createLogger('d&db');
 log.info('DDDICE D&D BEYOND');
@@ -26,95 +26,12 @@ const DEFAULT_THEME = 'dddice-bees';
 let characterId;
 let user: IUser;
 
-let hasHookedAux = false;
-let lastHealth: number | undefined;
-let lastTempHealth: number | undefined;
-
 function getCharacterID(): string | null {
   const characterIdMatch = window.location.pathname.match(/characters\/(.+)/);
   if (characterIdMatch?.length > 0) {
     return characterIdMatch[1];
   }
   return null;
-}
-
-function scheduleCheckHealth(): void {
-  //setTimeout(checkHealth, 1000);
-}
-
-function hideSideBar(): void {
-  const sideBarMask: HTMLDivElement = document.querySelector('.ct-sidebar__mask');
-  if (sideBarMask) {
-    sideBarMask.click();
-    return;
-  }
-  //give it time to be available
-  setTimeout(hideSideBar, 50);
-}
-
-async function checkHealth(): void {
-  const healthEl = document.querySelector('.ct-health-summary__hp-number');
-  const tempHealthEl = document.querySelector(
-    '.ct-health-summary__hp-item--temp .ct-health-summary__hp-item-content',
-  );
-  const deathEl = document.querySelector('.ct-health-summary__deathsaves');
-  const mobileHealthEl = document.querySelector('.ct-status-summary-mobile__hp-current');
-  const mobileDeathEl = document.querySelector('.ct-status-summary-mobile__deathsaves');
-  let tempHealth = 0;
-  let health = 0;
-  if (deathEl || mobileDeathEl) {
-    // oh no - we're at 0 health
-  } else if (healthEl && tempHealthEl) {
-    log.debug('Checking health - desktop');
-    health = parseInt(healthEl.textContent);
-    tempHealth = parseInt(tempHealthEl.textContent);
-    if (isNaN(tempHealth)) {
-      tempHealth = 0;
-    }
-  } else if (mobileHealthEl) {
-    log.debug('Checking health - mobile');
-    const mobileRealHealthEl = document.querySelector('div.ct-health-manager__health-item-value');
-    if (!mobileRealHealthEl) {
-      const healthButton: HTMLDivElement = document.querySelector(
-        '.ct-status-summary-mobile__health',
-      );
-      log.debug('Checking health - mobile - healthbutton', healthButton);
-      if (healthButton) {
-        healthButton.click();
-        hideSideBar();
-        scheduleCheckHealth();
-      }
-      return;
-    }
-    const displayedHealth = parseInt(mobileHealthEl.textContent);
-    health = parseInt(mobileRealHealthEl.textContent);
-    if (health !== displayedHealth) {
-      tempHealth = displayedHealth - health;
-    }
-  } else {
-    scheduleCheckHealth();
-    return;
-  }
-  if (lastHealth !== health || lastTempHealth !== tempHealth) {
-    lastHealth = health;
-    lastTempHealth = tempHealth;
-    log.info('Sending health', health, tempHealth);
-    const healthMessage: HealthMessage = {
-      type: 'health',
-      health,
-      tempHealth,
-      characterId: getCharacterID(),
-    };
-    chrome.runtime.sendMessage(healthMessage);
-  }
-  scheduleCheckHealth();
-}
-function hookAuxiliaryFeatures() {
-  if (hasHookedAux) {
-    return;
-  }
-  hasHookedAux = true;
-  checkHealth();
 }
 
 /**
@@ -127,6 +44,7 @@ async function init() {
     )
   ) {
     log.debug('init');
+    const apiKey = getStorage('apiKey');
     characterId = getCharacterID();
 
     // add canvas element to document
@@ -136,23 +54,25 @@ async function init() {
     }
 
     const room = await getStorage('room');
-    if (!user) {
-      user = (await dddice.api.user.get()).data;
-    }
-    const characterName = document.querySelector(
-      '.ddbc-character-tidbits__heading h1',
-    )?.textContent;
+    if (dddice && room) {
+      if (!user) {
+        user = (await dddice.api.user.get()).data;
+      }
+      const characterName = document.querySelector(
+        '.ddbc-character-tidbits__heading h1',
+      )?.textContent;
 
-    const userParticipant = room.participants.find(
-      ({ user: { uuid: participantUuid } }) => participantUuid === user.uuid,
-    );
+      const userParticipant = room.participants.find(
+        ({ user: { uuid: participantUuid } }) => participantUuid === user.uuid,
+      );
 
-    if (characterName && userParticipant.username != characterName) {
-      userParticipant.username = characterName;
-      setStorage({ room });
-      await dddice.api.room.updateParticipant(room.slug, userParticipant.id, {
-        username: characterName,
-      });
+      if (characterName && userParticipant.username != characterName) {
+        userParticipant.username = characterName;
+        setStorage({ room });
+        await dddice.api.room.updateParticipant(room.slug, userParticipant.id, {
+          username: characterName,
+        });
+      }
     }
 
     const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
@@ -169,8 +89,6 @@ async function init() {
       !customRollMenuButton
     )
       return setTimeout(init, RETRY_TIMEOUT); // retry if missing
-
-    hookAuxiliaryFeatures();
 
     // Add listeners to character sheet roll buttons
     characterSheetDiceElements.forEach(element => {
@@ -479,7 +397,11 @@ async function rollCreate(
   label: string = undefined,
 ) {
   log.debug('creating a roll', { roll, modifier, operator, label });
-  const [room, _theme] = await Promise.all([getStorage('room'), getStorage('theme')]);
+  const [room, _theme, apiKey] = await Promise.all([
+    getStorage('room'),
+    getStorage('theme'),
+    getStorage('apiKey'),
+  ]);
 
   const theme = _theme && _theme.id != '' ? _theme.id : DEFAULT_THEME;
 
@@ -512,7 +434,7 @@ async function rollCreate(
     });
   }
 
-  if (!dddice?.api) {
+  if (!apiKey || !dddice?.api) {
     notify(
       `dddice extension hasn't been set up yet. Please open the the extension pop up via the extensions menu`,
     );
@@ -746,7 +668,7 @@ async function initializeSDK() {
     getStorage('theme'),
     getStorage('render mode'),
   ]).then(async ([apiKey, room, theme, renderMode]) => {
-    if (apiKey) {
+    if (apiKey && room && theme) {
       log.debug('initializeSDK', renderMode);
       if (dddice) {
         // clear the board
@@ -812,6 +734,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   switch (message.type) {
     case 'reloadDiceEngine':
       initializeSDK();
+      init();
       break;
     case 'preloadTheme':
       preloadTheme(message.theme);

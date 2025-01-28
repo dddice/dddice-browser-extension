@@ -9,6 +9,7 @@
     ]
   },
   "validators": {
-    "*.{ts,tsx}": ["@parcel/validator-typescript"]
-  }
+    //"*.{ts,tsx}": ["@parcel/validator-typescript"]
+  },
+  "resolvers": ["parcel-resolver-ts-base-url","..."]
 }

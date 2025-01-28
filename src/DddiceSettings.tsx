@@ -10,7 +10,6 @@ import LogOut from './assets/interface-essential-exit-door-log-out-1.svg';
 import Help from './assets/support-help-question-question-square.svg';
 import imageLogo from 'url:./assets/dddice-48x48.png';
 
-import ApiKeyEntry from './components/ApiKeyEntry';
 import RoomSelection from './components/RoomSelection';
 
 import Room from './components/Room';
@@ -22,6 +21,7 @@ import SdkBridge from './SdkBridge';
 import PermissionProvider from './PermissionProvider';
 import Toggle from './components/Toggle';
 import { CustomConfiguration } from './schema/custom_configuration';
+import CodeActivationScreen from './ts/Partials/CodeActivationScreen';
 
 export interface IStorage {
   apiKey?: string;
@@ -30,6 +30,7 @@ export interface IStorage {
   themes?: ITheme[];
   rooms?: IRoom[];
   renderMode: boolean;
+  loaded: boolean;
 }
 
 export const DefaultStorage: IStorage = {
@@ -39,6 +40,7 @@ export const DefaultStorage: IStorage = {
   themes: undefined,
   rooms: undefined,
   renderMode: true,
+  loaded: false,
 };
 
 interface DddiceSettingsProps {
@@ -77,12 +79,12 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   /**
    * Connected
    */
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
 
   /**
    * Error
    */
-  const [error, setError] = useState();
+  const [error, setError] = useState<string>();
 
   /**
    * Current VTT
@@ -94,6 +96,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   const [externalConfiguration, setExternalConfiguration] = useState<
     CustomConfiguration | undefined
   >(undefined);
+
   /**
    * Connect to VTT
    * Mount / Unmount
@@ -101,7 +104,6 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   useEffect(() => {
     async function connect() {
       const platform = await sdkBridge.detectPlatform();
-      setIsConnected(true);
       if (platform) {
         setVTT(platform);
       }
@@ -129,13 +131,12 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         rooms,
         themes,
         renderMode: renderMode === undefined ? true : renderMode,
+        loaded: true,
       }));
     }
 
-    if (isConnected) {
-      initStorage();
-    }
-  }, [isConnected]);
+    initStorage();
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -227,7 +228,9 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     }
   }, [state.apiKey]);
 
-  useEffect(() => ReactTooltip.rebuild());
+  useEffect(() => {
+    ReactTooltip.rebuild();
+  });
 
   const reloadDiceEngine = async () => {
     await sdkBridge.reloadDiceEngine();
@@ -242,7 +245,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       if (roomSlug) {
         setLoadingMessage('Joining room');
         pushLoading();
-        await createGuestAccountIfNeeded();
+        //await createGuestAccountIfNeeded();
         const room = state.rooms && state.rooms.find(r => r.slug === roomSlug);
         if (room) {
           onChangeRoom(room);
@@ -300,7 +303,6 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     try {
       newRoom = (await api.current.room.create()).data;
     } catch (error) {
-      console.error('count not create room 1');
       setError('could not create room');
       clearLoading();
       throw error;
@@ -353,7 +355,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   }, []);
 
   const onSignOut = useCallback(() => {
-    setState(DefaultStorage);
+    setState({ ...DefaultStorage, loaded: true });
     storageProvider.removeStorage('apiKey');
     storageProvider.removeStorage('theme');
     if (permissionProvider.canChangeRoom()) {
@@ -361,6 +363,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
     }
     storageProvider.removeStorage('rooms');
     storageProvider.removeStorage('themes');
+    storageProvider.removeStorage('activate');
     setError(undefined);
     clearLoading();
   }, []);
@@ -397,28 +400,30 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   return (
     <div className="px-4 pt-2 pb-4 scroll !font-sans !text-xs">
       <ReactTooltip effect="solid" />
-      {isConnected && (
+      {state.loaded && (
         <>
           <div className="flex flex-row items-baseline justify-center">
             {isEnterApiKey ? (
               <span
-                className="text-gray-700 text-xxs mr-auto cursor-pointer"
+                className="text-gray-300 text-xxs mr-auto cursor-pointer"
                 onClick={() => setIsEnterApiKey(false)}
               >
                 <Back className="flex h-4 w-4 m-auto" data-tip="Back" data-place="right" />
               </span>
             ) : (
               <a
-                className="!text-gray-700 text-xxs mr-auto"
-                href="https://docs.dddice.com/guides/browser-extension.html"
+                className="!text-gray-300 text-xxs mr-auto"
+                href="https://docs.dddice.com/docs/integrations/browser-extension"
                 target="_blank"
               >
                 <Help className="flex h-4 w-4 m-auto" data-tip="Help" data-place="right" />
               </a>
             )}
-            <span className="text-gray-700 text-xxs ml-auto cursor-pointer" onClick={onSignOut}>
-              <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
-            </span>
+            {state.apiKey && (
+              <span className="text-gray-300 text-xxs ml-auto cursor-pointer" onClick={onSignOut}>
+                <LogOut className="flex h-4 w-4 m-auto" data-tip="Logout" data-place="left" />
+              </span>
+            )}
           </div>
         </>
       )}
@@ -428,10 +433,10 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
       </div>
       {externalConfiguration && (
         <div className="flex flex-col space-y-1 items-center justify-center">
-          <span class="text-white text-lg">Configuration is being controlled by</span>
+          <span className="text-white text-lg">Configuration is being controlled by</span>
           <img src={externalConfiguration.icon} alt="configuration system" />
           <div className="flex flex-col items-center space-y-3">
-            <p class="text-white">You can change your theme there</p>
+            <p className="text-white">You can change your theme there</p>
             <p className="text-white space-y-2">Room: {(state.room || { name: 'Unknown' }).name}</p>
           </div>
         </div>
@@ -441,16 +446,16 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
           <p className="text-center text-neon-red">{error}</p>
         </div>
       )}
-      {isEnterApiKey ? (
-        <ApiKeyEntry onSuccess={onKeySuccess} />
+      {!state.apiKey && state.loaded ? (
+        <CodeActivationScreen setApiKey={onKeySuccess} />
       ) : (
-        isConnected &&
         !externalConfiguration && (
           <>
-            {isLoading ? (
+            {isLoading || !state.loaded ? (
               <div className="flex flex-col justify-center text-gray-700 mt-4">
                 <Loading className="flex h-10 w-10 animate-spin-slow m-auto" />
-                <div className="flex m-auto">{loadingMessage}</div>
+                <div className="flex m-auto text-gray-300">{loadingMessage}</div>
+                <div className="flex m-auto text-gray-300">keep extension open while loading</div>
               </div>
             ) : (
               <>
@@ -499,15 +504,13 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
           </>
         )
       )}
-      {!isConnected && (
+      {!state.loaded && (
         <div className="flex justify-center text-gray-700 mt-4">
-          <span className="text-center text-gray-300">
-            Not connected. Please navigate to a supported VTT.
-          </span>
+          <span className="text-center text-gray-300">Not connected.</span>
         </div>
       )}
       <p className="border-t border-gray-800 mt-4 pt-4 text-gray-700 text-xxs text-center">
-        {isConnected && (
+        {state.loaded && (
           <>
             <span className="text-gray-300">Connected to {vtt}</span>
             <span className="text-gray-700">{' | '}</span>

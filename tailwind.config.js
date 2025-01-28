@@ -1,6 +1,6 @@
 /** @format */
 
-const defaultTheme = require('tailwindcss/defaultTheme');
+//const defaultTheme = require('tailwindcss/defaultTheme');
 
 const config = {
   safelist: [
@@ -63,7 +63,7 @@ const config = {
         '5xl': ['48px', '1'],
       },
       fontFamily: {
-        sans: ['Mulish', ...defaultTheme.fontFamily.sans],
+        sans: ['Mulish'], //, ...defaultTheme.fontFamily.sans],
       },
       minWidth: {
         6: '1.5rem',

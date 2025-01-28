@@ -74,12 +74,6 @@ const RoomSelection = (props: IRooms) => {
         <div className="pt-0 p-1">or</div>
         <div className="flex-grow border-solid border-0 border-t border-gray-700" />
       </div>
-      <div className="text-gray-300 m-auto">
-        Don't see your rooms?{' '}
-        <DddiceButton size="small" onClick={onConnectAccount} isSecondary>
-          connect your account
-        </DddiceButton>
-      </div>
       {rooms?.length > 0 ? (
         <div className="overflow-y-auto mt-2">
           {rooms.map((room: IRoom) => (

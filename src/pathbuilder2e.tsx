@@ -452,7 +452,7 @@ function initializeSDK() {
     getStorage('theme'),
     getStorage('render mode'),
   ]).then(([apiKey, room, theme, renderMode]) => {
-    if (apiKey) {
+    if (apiKey && room && theme) {
       log.debug('initializeSDK', renderMode);
       if (dddice) {
         // clear the board

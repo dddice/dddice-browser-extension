@@ -1,12 +1,66 @@
 /** @format */
 import { HealthMessage } from './schema/health_message';
-import { setStorage } from './storage';
+import { getStorage, setStorage } from './storage';
 import createLogger from './log';
+import SdkBridge from './SdkBridge';
 
 const log = createLogger('background');
 log.info('Background initialized');
 
 const healthMessageByCharacterId: Record<string, HealthMessage> = {};
+
+async function pollForCode(data): Promise<string> {
+  const now = new Date().getTime();
+  const expiresAt = new Date(data?.expires_at).getTime();
+
+  while (data && expiresAt - now > 5000) {
+    if (data && !data.token && data.code && data.secret) {
+      try {
+        const newData = (
+          await (
+            await fetch(`${process.env.API_URI}/api/1.0/activate/${data.code}`, {
+              headers: {
+                Authorization: `Secret ${data.secret}`,
+              },
+            })
+          ).json()
+        ).data;
+        if (newData.token) {
+          return newData.token;
+        } else {
+          await new Promise(r => setTimeout(r, 5000));
+        }
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+const activate = async (): Promise<{
+  expires_at: string;
+  code: string;
+  secret: string;
+}> =>
+  (await (await fetch(`${process.env.API_URI}/api/1.0/activate`, { method: 'post' })).json()).data;
+
+const pollForActivationCode = async () => {
+  let data = await getStorage('activate');
+  const now = new Date().getTime();
+  const expiresAt = new Date(data?.expires_at).getTime();
+
+  if (isNaN(expiresAt) || expiresAt - now < 0) {
+    data = await activate();
+  }
+  await chrome.runtime.sendMessage({ type: 'activation_code', data });
+  await setStorage({ activate: data });
+  const apiKey = await pollForCode(data);
+  if (apiKey) {
+    new SdkBridge().reloadDiceEngine();
+    await setStorage({ apiKey });
+  }
+};
 
 function sendMessageToAllTabs(message) {
   chrome.tabs.query({}, function (tabs) {
@@ -32,7 +86,7 @@ function openURLInNewWindow(url: string, newWindowWidth: number = 500) {
     const height = currentWindow.height;
 
     const currentWindowWidth = width - newWindowWidth;
-    chrome.windows.update(currentWindowID, { width: currentWindowWidth });
+    chrome.windows.update(Number(currentWindowID), { width: currentWindowWidth });
     chrome.windows.create(
       {
         url: url,
@@ -44,12 +98,16 @@ function openURLInNewWindow(url: string, newWindowWidth: number = 500) {
       createdWindow => {
         const detectClosedWindow = windowId => {
           if (windowId === createdWindow.id) {
-            chrome.windows.get(currentWindowID, { populate: false }, currentWindow => {
-              chrome.windows.update(currentWindowID, { width: currentWindow.width + 500 }, () => {
-                if (originalState !== 'normal') {
-                  chrome.windows.update(currentWindowID, { state: originalState });
-                }
-              });
+            chrome.windows.get(Number(currentWindowID), { populate: false }, currentWindow => {
+              chrome.windows.update(
+                Number(currentWindowID),
+                { width: currentWindow.width + 500 },
+                () => {
+                  if (originalState !== 'normal') {
+                    chrome.windows.update(Number(currentWindowID), { state: originalState });
+                  }
+                },
+              );
             });
             chrome.windows.onRemoved.removeListener(detectClosedWindow);
           }
@@ -87,6 +145,9 @@ function openURLInNewWindow(url: string, newWindowWidth: number = 500) {
 }
 
 chrome.runtime.onMessage.addListener(async function (message, sender, sendResponse) {
+  if (message.type === 'activate') {
+    pollForActivationCode();
+  }
   if (message.type === 'health') {
     try {
       healthMessageByCharacterId[message.characterId] = message;

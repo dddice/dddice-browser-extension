@@ -3,11 +3,7 @@
     "browser": true,
     "es2021": true
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
@@ -27,11 +23,12 @@
         }
       },
       "rules": {
+        "@typescript-eslint/no-empty-function": "off",
         "@typescript-eslint/no-inferrable-types": "off",
         "@typescript-eslint/ban-ts-comment": "off",
         "@typescript-eslint/no-empty-interface": "off",
         "@typescript-eslint/no-explicit-any": "off",
-        "react-hooks/exhaustive-deps": "off",
+        "import/no-unresolved": "off",
         "react/no-unescaped-entities": "off",
         "react/display-name": "off",
         "no-console": [
@@ -39,7 +36,8 @@
           {
             "allow": ["warn", "error"]
           }
-        ]
+        ],
+        "import/default": "off"
       }
     }
   ]
