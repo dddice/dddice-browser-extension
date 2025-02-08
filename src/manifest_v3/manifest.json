@@ -2,7 +2,7 @@
   "name": "dddice",
   "description": "Roll 3D digital dice using your favorite browser-based VTT.",
   "manifest_version": 3,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "action": {
     "default_title": "dddice",
     "default_popup": "../index.html",
