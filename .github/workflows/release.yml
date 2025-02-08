@@ -190,7 +190,7 @@ jobs:
           key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
       - name: Publish Edge
-        uses: wdzeng/edge-addon@v1
+        uses: wdzeng/edge-addon@v2
         with:
           product-id: '4b7d0dc8-f01b-4136-bccd-ad6e23731042'
           zip-path: './dddice-browser-extension-manifest-v3.zip'
