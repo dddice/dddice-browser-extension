@@ -195,8 +195,7 @@ jobs:
           product-id: '4b7d0dc8-f01b-4136-bccd-ad6e23731042'
           zip-path: './dddice-browser-extension-manifest-v3.zip'
           client-id: ${{ secrets.EDGE_CLIENT_ID }}
-          client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-          access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+          api-key: ${{ secrets.EDGE_API_KEY}}
 
   firefox:
     if: inputs.firefox == true
