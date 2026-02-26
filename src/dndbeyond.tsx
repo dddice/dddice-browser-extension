@@ -81,14 +81,23 @@ async function init() {
     );
     const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
     const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
-    const isCharacterSheet = document.querySelector('.character-app');
+    const isCharacterSheet = document.querySelector('.body-rpgcharacter-sheet');
     if (
-      (characterSheetDiceElements.length === 0 && isCharacterSheet) ||
-      diceMenuDiceElements.length === 0 ||
-      !rollButton ||
-      !customRollMenuButton
-    )
-      return setTimeout(init, RETRY_TIMEOUT); // retry if missing
+      characterSheetDiceElements.length === 0 &&
+      isCharacterSheet //||
+      //diceMenuDiceElements.length === 0 ||
+      // !rollButton ||
+      //!customRollMenuButton
+    ) {
+      console.error({
+        characterSheetDiceElements: characterSheetDiceElements.length,
+        diceMenuDiceElements: diceMenuDiceElements.length,
+        rollButton,
+        customRollMenuButton,
+      });
+      return setTimeout(init, RETRY_TIMEOUT);
+    }
+    //return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
     // Add listeners to character sheet roll buttons
     characterSheetDiceElements.forEach(element => {
@@ -101,15 +110,15 @@ async function init() {
 
     // Add listeners to the left-hand dice menu
     log.debug('dice buttons', diceMenuDiceElements);
-    diceMenuDiceElements.forEach(element => {
+    diceMenuDiceElements?.forEach(element => {
       log.debug('button?');
       element.addEventListener('click', addDieToRoll, true);
       element.addEventListener('auxclick', removeDieFromRoll, true);
     });
 
     // Add roll button listeners
-    rollButton.addEventListener('click', executeCustomRoll, true);
-    customRollMenuButton.addEventListener('click', clearCustomRoll, true);
+    rollButton?.addEventListener('click', executeCustomRoll, true);
+    customRollMenuButton?.addEventListener('click', clearCustomRoll, true);
 
     if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
   } else {
