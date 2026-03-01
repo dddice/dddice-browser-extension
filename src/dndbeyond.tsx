@@ -34,14 +34,23 @@ function getCharacterID(): string | null {
   return null;
 }
 
+function pageRollResultsEnabled() {
+  return /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+)/.test(
+    window.location.pathname,
+  );
+}
+
 /**
  * Initialize listeners on all attacks
  */
 async function init() {
   if (
-    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+)/.test(
+    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+|monsters\/.+)/.test(
       window.location.pathname,
-    )
+    ) &&
+    // and not a child iframe that holds the d&d beyond comments for monsters
+    (window.parent === window ||
+      (window.parent !== window && window.location.pathname !== window.parent.location.pathname))
   ) {
     log.debug('init');
     const apiKey = getStorage('apiKey');
@@ -74,14 +83,55 @@ async function init() {
         });
       }
     }
+    //find monster skills and add dice contaners
+
+    let monsterSkills2014: Element;
+    document
+      .querySelectorAll(
+        '.mon-stat-block__tidbit .mon-stat-block__tidbit-label,.mon-stat-block-2024__tidbit .mon-stat-block-2024__tidbit-label,.mon-stat-block-2024__attribute .mon-stat-block-2024__attribute-label',
+      )
+      .forEach(element => {
+        if (
+          element.textContent === 'Skills' ||
+          element.textContent === 'Proficiency Bonus' ||
+          element.textContent === 'Initiative'
+        ) {
+          monsterSkills2014 = element.parentNode.querySelector(
+            '.mon-stat-block__tidbit-data,.mon-stat-block-2024__tidbit-data,.mon-stat-block-2024__attribute-data .mon-stat-block-2024__attribute-data-value',
+          );
+          monsterSkills2014.childNodes.forEach(element => {
+            if (element instanceof Text && element.textContent.trim() !== '') {
+              const span = document.createElement('span');
+              span.className = 'dddice-dice-button';
+              const text = element.textContent.trim().split(' ');
+              span.appendChild(document.createTextNode(text[0].replace(',', '')));
+              monsterSkills2014.replaceChild(span, element);
+              if (text.length > 1) {
+                span.insertAdjacentText('afterend', text.slice(1).join(' '));
+              }
+            }
+          });
+        }
+      });
+
+    const dddiceButtons = document.querySelectorAll('.dddice-dice-button');
 
     const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
     const characterSheetDiceElements = document.querySelectorAll(
       '.integrated-dice__container,.avtt-roll-button',
     );
+    const monsterStats2014 = document.querySelectorAll(
+      '.ability-block__stat .ability-block__modifier',
+    );
+    const monsterActions2014 = document.querySelectorAll(
+      '.mon-stat-block__description-block-content span[data-dicenotation],.mon-stat-block-2024__description-block-content span[data-dicenotation]',
+    );
+    const monsterStats2024 = document.querySelectorAll('.modifier');
+
     const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
     const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
     const isCharacterSheet = document.querySelector('.body-rpgcharacter-sheet');
+
     if (
       characterSheetDiceElements.length === 0 &&
       isCharacterSheet //||
@@ -89,7 +139,7 @@ async function init() {
       // !rollButton ||
       //!customRollMenuButton
     ) {
-      console.error({
+      console.warn(`d&d beyond is not ready, retrying in ${RETRY_TIMEOUT}`, {
         characterSheetDiceElements: characterSheetDiceElements.length,
         diceMenuDiceElements: diceMenuDiceElements.length,
         rollButton,
@@ -100,18 +150,24 @@ async function init() {
     //return setTimeout(init, RETRY_TIMEOUT); // retry if missing
 
     // Add listeners to character sheet roll buttons
-    characterSheetDiceElements.forEach(element => {
-      // Add listener to send roll to dddice
-      element.addEventListener('pointerover', onPointerOver, true);
-      element.addEventListener('pointerout', onPointerOut, true);
-      element.removeEventListener('click', rollFromCharacterSheet, true);
-      element.addEventListener('click', rollFromCharacterSheet, true);
-    });
+    [
+      characterSheetDiceElements,
+      monsterStats2014,
+      monsterActions2014,
+      monsterStats2024,
+      dddiceButtons,
+    ].forEach(i =>
+      i.forEach(element => {
+        // Add listener to send roll to dddice
+        element.addEventListener('pointerover', onPointerOver, true);
+        element.addEventListener('pointerout', onPointerOut, true);
+        element.removeEventListener('click', rollFromCharacterSheet, true);
+        element.addEventListener('click', rollFromCharacterSheet, true);
+      }),
+    );
 
     // Add listeners to the left-hand dice menu
-    log.debug('dice buttons', diceMenuDiceElements);
     diceMenuDiceElements?.forEach(element => {
-      log.debug('button?');
       element.addEventListener('click', addDieToRoll, true);
       element.addEventListener('auxclick', removeDieFromRoll, true);
     });
@@ -122,7 +178,6 @@ async function init() {
 
     if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
   } else {
-    log.debug('uninit');
     const currentCanvas = document.getElementById('dddice-canvas');
     if (currentCanvas) {
       currentCanvas.remove();
@@ -622,7 +677,7 @@ function clearChat() {
 }
 
 function updateChat(roll: IRoll) {
-  // add canvas element to document
+  if (!pageRollResultsEnabled()) return;
   let chatDiv = document.getElementById('noty_layout__bottomRight');
 
   if (!chatDiv) {
