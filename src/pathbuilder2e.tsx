@@ -104,21 +104,6 @@ async function init() {
       const inlineRollButtons = document.querySelectorAll('.dice-button.named-roll');
       const profModalRollSection = document.querySelectorAll('.modal .prof-layout');
 
-      criticalButton.forEach((element: HTMLElement) => {
-        element.style.opacity = '0.5';
-        //element.style.pointerEvents = 'none';
-        element.style.cursor = 'not-allowed';
-        element.setAttribute('title', '⚠ dddice | criticals are not yet supported');
-        element.addEventListener(
-          'click',
-          e => {
-            e.preventDefault();
-            e.stopPropagation();
-          },
-          true,
-        );
-      });
-
       log.debug('multiAttackButtons', multiAttackButtons);
 
       characterSheetDiceElements.forEach(element => {
