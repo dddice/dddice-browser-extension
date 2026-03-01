@@ -62,6 +62,8 @@ jobs:
           echo "new version: $VERSION"
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "latest=${VERSION}" >> $GITHUB_OUTPUT
+          echo "prev=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Update Version
         run: |
@@ -130,7 +132,7 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --current --strip all
+          args: ${{steps.version.outputs.prev}}..${{steps.version.outputs.latest}}  --strip header
         env:
           OUTPUT: CHANGES.md
 
