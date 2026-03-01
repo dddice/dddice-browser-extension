@@ -209,10 +209,10 @@ jobs:
           path: .
           key: ${{ runner.OS }}-cache-${{ needs.release.outputs.tag }}-${{ github.run_number }}
 
-      - uses: trmcnvn/firefox-addon@v1
+      - uses: wdzeng/firefox-addon@v1
         with:
-          uuid: '{87033b3f-6fa3-4046-b74f-76053b40c231}'
-          xpi: ./dddice-browser-extension-manifest-v2.zip
-          manifest: manifest_v2/manifest.json
-          api-key: ${{ secrets.FIREFOX_API_KEY }}
-          api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+          addon-guid: '{87033b3f-6fa3-4046-b74f-76053b40c231}'
+          xpi-path: ./dddice-browser-extension-manifest-v2.zip
+          self-hosted: false
+          jwt-issuer: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          jwt-secret: ${{ secrets.FIREFOX_JWT_SECRET }}
