@@ -39,6 +39,8 @@ jobs:
     outputs:
       tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
+      prev: ${{ steps.version.outputs.prev }}
+      latest: ${{ steps.version.outputs.latest }}
     steps:
       - name: Setup Volta
         uses: volta-cli/action@v4
@@ -59,11 +61,13 @@ jobs:
           if [ "$INCREMENT" != "none" ]; then
             VERSION=$(npx --yes semver -i "$INCREMENT" "$VERSION")
           fi
+          TAGS=($(git tag --sort=version:refname | grep -vE '[-](alpha|beta|rc)'))
+          LATEST=${TAGS[-1]}
+          PREV=${TAGS[-2]}
           echo "new version: $VERSION"
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "latest=${VERSION}" >> $GITHUB_OUTPUT
-          echo "prev=${TAG}" >> $GITHUB_OUTPUT
+          echo "latest=${LATEST}" >> $GITHUB_OUTPUT
+          echo "prev=${PREV}" >> $GITHUB_OUTPUT
 
       - name: Update Version
         run: |
@@ -132,7 +136,7 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: ${{steps.version.outputs.prev}}..${{steps.version.outputs.latest}}  --strip header
+          args: ${{needs.release.outputs.prev}}..${{needs.release.outputs.latest}}  --strip header
         env:
           OUTPUT: CHANGES.md
 
