@@ -53,6 +53,7 @@ async function init() {
       (window.parent !== window && window.location.pathname !== window.parent.location.pathname))
   ) {
     log.debug('init');
+
     const apiKey = getStorage('apiKey');
     characterId = getCharacterID();
 
@@ -161,8 +162,8 @@ async function init() {
         // Add listener to send roll to dddice
         element.addEventListener('pointerover', onPointerOver, true);
         element.addEventListener('pointerout', onPointerOut, true);
-        element.removeEventListener('click', rollFromCharacterSheet, true);
-        element.addEventListener('click', rollFromCharacterSheet, true);
+        element.removeEventListener('pointerdown', rollFromCharacterSheet, true);
+        element.addEventListener('pointerdown', rollFromCharacterSheet, { capture: true });
       }),
     );
 
@@ -405,6 +406,7 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
 
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
 
     const text = (
       (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent
