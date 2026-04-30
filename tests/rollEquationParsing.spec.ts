@@ -3,6 +3,33 @@
 import { convertRoll20RollToDddiceRoll, processRoll20InlineRollText } from '../src/rollConverters';
 
 describe('Roll20 /roll', () => {
+  it('1df', async () => {
+    const element = document.createElement('div');
+    element.innerHTML =
+      '<div class="message rollresult you player--OrUXEzq7dey9zKxHHrs quantumRoll discord-production" data-messageid="-OrUbPllDKCAVn9-byxq" data-playerid="-OrUXEzq7dey9zKxHHrs" data-dddice-roll-uuid="97b45154-8a0c-46dc-8bf4-bbaf5022ca41"><div class="spacer"></div><div class="avatar" aria-hidden="true"><img src="/users/avatar/10989993/30"></div><span class="tstamp" aria-hidden="true">2:19PM</span><span class="by">Celeste Bloodregin (GM):</span><div class="formula" style="margin-bottom: 3px;">rolling 1df</div><div class="clear"></div><div class="formula formattedformula"><div class="dicegrouping ui-sortable" data-groupindex="0">(<div data-origindex="0" class="diceroll d6"><div class="dicon"><div class="didroll">0</div><div class="backing"></div></div></div>)</div><div class="clear"></div></div><div class="clear"></div><strong>=</strong><div class="rolled ui-draggable ui-draggable-handle">0</div><div id="menu-OrUbPllDKCAVn9-byxq" class="flyout" data-v-app=""></div></div>';
+    const actual = await convertRoll20RollToDddiceRoll(element, 'test-theme');
+    expect(actual).toEqual({
+      dice: [{ theme: 'test-theme', type: 'df', value: 0 }],
+      operator: {},
+    });
+  });
+
+  it('4df', async () => {
+    const element = document.createElement('div');
+    element.innerHTML =
+      '<div class="message rollresult you player--OrUXEzq7dey9zKxHHrs quantumRoll discord-production" data-messageid="-OrUZ6SYl-JWot3lmiyX" data-playerid="-OrUXEzq7dey9zKxHHrs"><div class="formula" style="margin-bottom: 3px;">rolling 4df</div><div class="clear"></div><div class="formula formattedformula"><div class="dicegrouping ui-sortable" data-groupindex="0">(<div data-origindex="0" class="diceroll d6"><div class="dicon"><div class="didroll">-</div><div class="backing"></div></div></div><div data-origindex="1" class="diceroll d6"><div class="dicon"><div class="didroll">+</div><div class="backing"></div></div></div><div data-origindex="2" class="diceroll d6"><div class="dicon"><div class="didroll">0</div><div class="backing"></div></div></div><div data-origindex="3" class="diceroll d6"><div class="dicon"><div class="didroll">+</div><div class="backing"></div></div></div>)</div><div class="clear"></div></div><div class="clear"></div><strong>=</strong><div class="rolled ui-draggable ui-draggable-handle">2</div><div id="menu-OrUZ6SYl-JWot3lmiyX" class="flyout" data-v-app=""></div></div>';
+    const actual = await convertRoll20RollToDddiceRoll(element, 'test-theme');
+    expect(actual).toEqual({
+      dice: [
+        { theme: 'test-theme', type: 'df', value: -1 },
+        { theme: 'test-theme', type: 'df', value: 1 },
+        { theme: 'test-theme', type: 'df', value: 0 },
+        { theme: 'test-theme', type: 'df', value: 1 },
+      ],
+      operator: {},
+    });
+  });
+
   it('2d20kh1', async () => {
     const element = document.createElement('div');
     element.innerHTML =

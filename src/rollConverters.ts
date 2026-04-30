@@ -47,9 +47,9 @@ const removeUnsupportedRoll20Operators = (equation: string): string =>
     // replace comparators as we don't understand those
     .replace(/(cs|cf)?[><=]=?\d+/g, '')
     // remove unsupported operators
-    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)([+\-,])/g, '$2')
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|min|max)([+\-,])/g, '$2')
     // remove unsupported operators
-    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|df|min|max)(\d+|$)/g, '')
+    .replace(/(r|rr|!|!!|!p|ro|co|ce|sf|min|max)(\d+|$)/g, '')
     // add implied 1 for kh dh kl & dl
     .replace(/([kd][hl])(\D|$)/g, '$11$2');
 
@@ -57,14 +57,22 @@ export async function convertRoll20RollToDddiceRoll(node: Element, theme: string
   const equation = node
     .querySelector('.formula:not(.formattedformula)')
     .textContent.split('rolling ')[1];
+  log.debug('equation = ' + equation);
   const values = [];
   node
     .querySelector('.formattedformula')
     .querySelectorAll('.diceroll')
     .forEach(die => {
-      values.push(parseInt(die.querySelector('.didroll').textContent));
+      const value = die.querySelector('.didroll').textContent;
+      if (value === '+') {
+        values.push(1);
+      } else if (value === '-') {
+        values.push(-1);
+      } else {
+        values.push(parseInt(value));
+      }
     });
-
+  log.debug(removeUnsupportedRoll20Operators(equation));
   return parseRollEquation(removeUnsupportedRoll20Operators(equation), theme, values);
 }
 

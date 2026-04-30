@@ -295,7 +295,7 @@ function watchForRollToMake(mutations: MutationRecord[]) {
                 switch (rollMessageType) {
                   case RollMessageType.general: {
                     const { dice, operator } = await convertRoll20RollToDddiceRoll(node, theme);
-                    log.debug('roll create 5e');
+                    log.debug('roll create general');
                     await rollCreate(dice, external_id, node, operator);
                     break;
                   }
