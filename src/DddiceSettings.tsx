@@ -254,9 +254,13 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
           try {
             newRoom = (await api.current.room.join(roomSlug, passcode)).data;
           } catch (error) {
-            setError('could not join room');
-            clearLoading();
-            throw error;
+            if (error.response.status !== 409) {
+              setError('could not join room');
+              clearLoading();
+              throw error;
+            } else {
+              newRoom = (await api.current.room.get(roomSlug, passcode)).data;
+            }
           }
           if (newRoom) {
             await storageProvider.setStorage({
