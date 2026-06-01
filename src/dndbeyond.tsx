@@ -12,7 +12,14 @@ import { IRoll, ThreeDDiceRollEvent, ThreeDDice, ITheme, ThreeDDiceAPI, IUser } 
 import imageLogo from 'url:./assets/dddice-32x32.png';
 
 import notify from './utils/notify';
-import apiKeyEntry from './components/ApiKeyEntry';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+
+Notify.init({
+  useIcon: false,
+  fontSize: '16px',
+  timeout: 10000,
+  clickToClose: true,
+});
 
 const log = createLogger('d&db');
 log.info('DDDICE D&D BEYOND');
@@ -164,6 +171,10 @@ async function init() {
         element.addEventListener('pointerout', onPointerOut, true);
         element.removeEventListener('pointerdown', rollFromCharacterSheet, true);
         element.addEventListener('pointerdown', rollFromCharacterSheet, { capture: true });
+        element.removeEventListener('pointerup', noOp, true);
+        element.addEventListener('pointerup', noOp, { capture: true });
+        element.removeEventListener('click', noOp, true);
+        element.addEventListener('click', noOp, { capture: true });
       }),
     );
 
@@ -186,7 +197,23 @@ async function init() {
     }
   }
 }
+function generateNotificationMessage(roll: IRoll) {
+  const roller = roll.room.participants.find(
+    participant => participant.user.uuid === roll.user.uuid,
+  );
 
+  return `${roller.username}: ${roll.equation} = ${
+    typeof roll.total_value === 'object' ? '⚠' : roll.total_value
+  }`;
+}
+
+function notifyRollFinished(roll: IRoll) {
+  Notify.success(generateNotificationMessage(roll));
+}
+
+function notifyRollCreated(roll: IRoll) {
+  Notify.info(generateNotificationMessage(roll));
+}
 function clearCustomRoll() {
   customRoll = {};
 }
@@ -389,6 +416,12 @@ function onPointerOut() {
     }
   };
   this.timeout = setTimeout(closeOverlay, FADE_TIMEOUT);
+}
+
+function noOp(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
 }
 
 function rollFromCharacterSheet(e) {
@@ -757,7 +790,7 @@ async function initializeSDK() {
         document.body.appendChild(canvasElement);
         try {
           dddice = new ThreeDDice().initialize(canvasElement, apiKey, undefined, 'D&D Beyond');
-          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => updateChat(roll));
+          dddice.on(ThreeDDiceRollEvent.RollFinished, (roll: IRoll) => notifyRollFinished(roll));
           dddice.start();
           if (room) {
             dddice.connect(room.slug);
@@ -781,7 +814,7 @@ async function initializeSDK() {
           notify(`${e.response?.data?.data?.message ?? e}`);
         }
         dddice.api.listen(ThreeDDiceRollEvent.RollCreated, (roll: IRoll) =>
-          setTimeout(() => updateChat(roll), 1500),
+          setTimeout(() => notifyRollCreated(roll), 1500),
         );
       }
     } else {
