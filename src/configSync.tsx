@@ -1,7 +1,7 @@
 /** @format */
 
 import createLogger from './log';
-import { ITheme, ThreeDDice, ThreeDDiceAPI } from 'dddice-js';
+import { IRoom, ITheme, ThreeDDice, ThreeDDiceAPI } from 'dddice-js';
 import { getStorage, setStorage } from './storage';
 import SdkBridge from './SdkBridge';
 
@@ -9,13 +9,16 @@ const log = createLogger('dddice-config-listener');
 log.info('DDDICE config listener loaded');
 
 const loadRoomsAndThemes = async (api: ThreeDDiceAPI) => {
-  const rooms = (await api.room.list()).data;
+  let rooms: IRoom[] = [];
+  let _rooms = (await api.room.list()).data;
+  while (_rooms) {
+    rooms = [...rooms, ..._rooms];
+    _rooms = (await api.room.next())?.data;
+  }
   setStorage({ rooms });
 
   let themes: ITheme[] = [];
-
   let _themes = (await api.diceBox.list()).data;
-
   while (_themes) {
     themes = [...themes, ..._themes];
     _themes = (await api.diceBox.next())?.data;

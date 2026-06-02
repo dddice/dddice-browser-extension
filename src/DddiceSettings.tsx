@@ -150,6 +150,7 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
         popLoading();
       }, 500);
     }
+
     if (isConnected) {
       init();
     }
@@ -189,11 +190,22 @@ const DddiceSettings = (props: DddiceSettingsProps) => {
   }, [state?.room?.slug]);
 
   const refreshRooms = async () => {
-    setLoadingMessage('Loading rooms list');
+    let rooms: IRoom[] = [];
     pushLoading();
-    const rooms = (await api.current.room.list()).data;
+    setLoadingMessage('Loading rooms (1)');
+    let _rooms = (await api.current.room.list()).data;
+
+    let page = 1;
+    while (_rooms) {
+      setLoadingMessage(`Loading rooms (${page++})`);
+      rooms = [...rooms, ..._rooms];
+      _rooms = (await api.current.room.next())?.data;
+    }
     storageProvider.setStorage({ rooms });
-    setState(state => ({ ...state, rooms }));
+    setState(state => ({
+      ...state,
+      rooms,
+    }));
     popLoading();
   };
 
