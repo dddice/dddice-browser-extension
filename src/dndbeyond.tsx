@@ -52,7 +52,7 @@ function pageRollResultsEnabled() {
  */
 async function init() {
   if (
-    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+|monsters\/.+)/.test(
+    /^\/(characters\/.+|my-encounters|encounter-builder|combat-tracker\/.+|encounters\/.+|monsters)/.test(
       window.location.pathname,
     ) &&
     // and not a child iframe that holds the d&d beyond comments for monsters
@@ -441,9 +441,11 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    const text = (
-      (this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent
-    ).replace(/[() ]/g, '');
+    const text =
+      (this as HTMLDivElement).dataset.dicenotation ??
+      ((this as HTMLDivElement).dataset.text ?? (this as HTMLDivElement).textContent)
+        .replace(/[() ]/g, '')
+        .replace(/−/, '-');
     const rollContext = (this as HTMLDivElement).dataset.context ?? getRollContext(this);
     log.debug('equation', text);
     let modifier: number;
@@ -463,8 +465,8 @@ function onPointerUp(overlayId = undefined, operator = {}, isCritical = false) {
     if (/\+\d*/.test(text)) {
       const [num] = /\+(\d*)/.exec(text);
       modifier = Number(num);
-    } else if (/-\d*/.test(text)) {
-      const [num] = /-(\d*)/.exec(text);
+    } else if (/[-]\d*/.test(text)) {
+      const [num] = /[-](\d*)/.exec(text);
       modifier = Number(num);
     } else if (!isNaN(+text)) {
       // convert raw stat into modifier
