@@ -124,7 +124,8 @@ async function init() {
 
     const dddiceButtons = document.querySelectorAll('.dddice-dice-button');
 
-    const diceMenuDiceElements = document.querySelectorAll('.dice-die-button');
+    const diceMenuDiceElementsEncounters = document.querySelectorAll('.dice-die-button');
+    const diceMenuDiceElementsCharacterSheet = document.querySelectorAll('.pu5NBa_button');
     const characterSheetDiceElements = document.querySelectorAll(
       '.integrated-dice__container,.avtt-roll-button',
     );
@@ -136,7 +137,12 @@ async function init() {
     );
     const monsterStats2024 = document.querySelectorAll('.modifier');
 
-    const rollButton = document.querySelector('.MuiButtonGroup-root > button:first-child');
+    const rollButtonOld = document.querySelector('.MuiButtonGroup-root > button:first-child');
+    const rollButtonNew = document.querySelector('.ogfxNa_buttonsWrapper > button:last-child');
+    const cancelRollButtonNew = document.querySelector(
+      '.ogfxNa_buttonsWrapper > button:first-child',
+    );
+    const cancelRollButtonNew2 = document.querySelector('.Om6VJa_header button');
     const customRollMenuButton = document.querySelector('.dice-toolbar__dropdown-die');
     const isCharacterSheet = document.querySelector('.body-rpgcharacter-sheet');
 
@@ -149,8 +155,8 @@ async function init() {
     ) {
       console.warn(`d&d beyond is not ready, retrying in ${RETRY_TIMEOUT}`, {
         characterSheetDiceElements: characterSheetDiceElements.length,
-        diceMenuDiceElements: diceMenuDiceElements.length,
-        rollButton,
+        diceMenuDiceElements: diceMenuDiceElementsEncounters.length,
+        rollButton: rollButtonOld,
         customRollMenuButton,
       });
       return setTimeout(init, RETRY_TIMEOUT);
@@ -179,14 +185,20 @@ async function init() {
     );
 
     // Add listeners to the left-hand dice menu
-    diceMenuDiceElements?.forEach(element => {
-      element.addEventListener('click', addDieToRoll, true);
-      element.addEventListener('auxclick', removeDieFromRoll, true);
-    });
+    [diceMenuDiceElementsEncounters, diceMenuDiceElementsCharacterSheet].forEach(i =>
+      i?.forEach(element => {
+        element.addEventListener('click', addDieToRoll, true);
+        element.addEventListener('auxclick', removeDieFromRoll, true);
+      }),
+    );
 
     // Add roll button listeners
-    rollButton?.addEventListener('click', executeCustomRoll, true);
-    customRollMenuButton?.addEventListener('click', clearCustomRoll, true);
+    [rollButtonOld, rollButtonNew].forEach(e =>
+      e?.addEventListener('click', executeCustomRoll, true),
+    );
+    [customRollMenuButton, cancelRollButtonNew, cancelRollButtonNew2].forEach(e =>
+      e?.addEventListener('click', clearCustomRoll, true),
+    );
 
     if (dddice?.canvas) dddice.resize(window.innerWidth, window.innerHeight);
   } else {
@@ -220,20 +232,24 @@ function clearCustomRoll() {
 
 function addDieToRoll() {
   log.debug('add die to roll');
-  const dieType = this.dataset.dice;
+  const dieType = this.dataset.dice ?? this.id;
   log.info(`add ${dieType} to roll`);
-  if (customRoll[dieType]) {
-    customRoll[dieType]++;
-  } else {
-    customRoll[dieType] = 1;
+  if (dieType) {
+    if (customRoll[dieType]) {
+      customRoll[dieType]++;
+    } else {
+      customRoll[dieType] = 1;
+    }
   }
 }
 
 function removeDieFromRoll() {
-  const dieType = this.dataset.dice;
+  const dieType = this.dataset.dice ?? this.id;
   log.info(`remove ${this.dataset.dice} from roll`);
-  if (customRoll[dieType]) {
-    customRoll[dieType]--;
+  if (dieType) {
+    if (customRoll[dieType]) {
+      customRoll[dieType]--;
+    }
   }
 }
 
@@ -244,7 +260,8 @@ function executeCustomRoll(e) {
   rollCreate({ ...customRoll });
   customRoll = {};
 
-  (document.querySelector('.dice-toolbar__dropdown-die') as HTMLElement).click();
+  (document.querySelector('.dice-toolbar__dropdown-die') as HTMLElement)?.click();
+  (document.querySelector('.Om6VJa_header button') as HTMLElement)?.click();
 }
 
 function traverseToParentWithClass(me: HTMLElement, classNames: string[], maxLevels = 5) {
@@ -854,6 +871,20 @@ observer.observe(document.getElementById('site-main'), {
   childList: true,
   subtree: true,
 });
+
+function observeFreeRoll() {
+  if (document.querySelector('.AnchoredPopover_wrapper__Dxx7I')) {
+    const observer2 = new MutationObserver(() => init());
+    observer2.observe(document.querySelector('.AnchoredPopover_wrapper__Dxx7I'), {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    });
+  } else {
+    setTimeout(observeFreeRoll, 0);
+  }
+}
+observeFreeRoll();
 
 const chatObserver = new MutationObserver(() => pruneChat());
 startObservingChatMessages();
