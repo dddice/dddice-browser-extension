@@ -83,13 +83,14 @@ async function init() {
         ({ user: { uuid: participantUuid } }) => participantUuid === user.uuid,
       );
 
+      /* I think this is causing problems and running every time the mutator run and therefore hammering the server
       if (characterName && userParticipant.username != characterName) {
         userParticipant.username = characterName;
         setStorage({ room });
         await dddice.api.room.updateParticipant(room.slug, userParticipant.id, {
           username: characterName,
         });
-      }
+      }*/
     }
     //find monster skills and add dice contaners
 
